@@ -1,5 +1,10 @@
-export default function Home() {
+import Navbar from "@/components/navbar";
+
+
+export default function Root() {
   return (
-    <div></div>
+    <div>
+      <Navbar />
+    </div>
   );
 }
