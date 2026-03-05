@@ -11,3 +11,11 @@ body {
   color: var(--foreground);
   min-height: 100%;
 }
+
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}

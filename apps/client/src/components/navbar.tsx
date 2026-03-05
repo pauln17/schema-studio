@@ -9,13 +9,10 @@ export default function Navbar() {
                     <a href="/"><Image src="/logo.png" alt="Schema" width={45} height={45} /></a>
                     <Link href="/" className="text-2xl">Schema Studio</Link>
                 </div>
-                <div className="flex items-end gap-8 text-md mt-0.5">
-                    <h1 className="cursor-pointer">Editor</h1>
-                    <h1 className="cursor-pointer">Convert SQL</h1>
-                    <h1 className="cursor-pointer">Parse SQL</h1>
-                </div>
             </div>
-            <Image src="/github.png" alt="GitHub" width={40} height={40} onClick={() => window.open("https://github.com/pauln17/schema-viewer", "_blank", "noopener, noreferrer")} className="cursor-pointer" />
+            <a href="https://github.com/pauln17/schema-viewer" target="_blank" rel="noopener noreferrer">
+                <Image src="/github.png" alt="GitHub" width={40} height={40} className="cursor-pointer" />
+            </a>
         </div >
     );
 }
