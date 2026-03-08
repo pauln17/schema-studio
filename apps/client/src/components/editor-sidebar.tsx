@@ -66,7 +66,7 @@ function TableSection({ table, allTables, enums, onTableChange }: TableSectionPr
             if (targets.length === 0) return;
             const target = targets[0];
             const targetCol = target.columns.find(c => c.primaryKey) ?? target.columns[0];
-            updateColumn(colName, { references: { table: target.name, column: targetCol.name } });
+            updateColumn(colName, { references: { referencedTable: target.name, referencedColumn: targetCol.name } });
         }
     };
 
@@ -79,13 +79,13 @@ function TableSection({ table, allTables, enums, onTableChange }: TableSectionPr
         const target = allTables.find(t => t.name === newTable);
         if (!target) return;
         const targetCol = target.columns.find(c => c.primaryKey) ?? target.columns[0];
-        updateColumn(colName, { references: { table: newTable, column: targetCol.name } });
+        updateColumn(colName, { references: { referencedTable: newTable, referencedColumn: targetCol.name } });
     };
 
     const changeFkColumn = (colName: string, newCol: string) => {
         const col = tableColumns.find(c => c.name === colName);
         if (!col?.references) return;
-        updateColumn(colName, { references: { table: col.references.table, column: newCol } });
+        updateColumn(colName, { references: { referencedTable: col.references.referencedTable, referencedColumn: newCol } });
     };
 
     // Changing Column Type
@@ -267,7 +267,7 @@ function TableSection({ table, allTables, enums, onTableChange }: TableSectionPr
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-blue-400 text-[10px]">&rarr;</span>
                                     <select
-                                        value={col.references.table}
+                                        value={col.references.referencedTable}
                                         onChange={(e) => changeFkTable(col.name, e.target.value)}
                                         className="bg-transparent text-[10px] text-neutral-400 font-mono border-none outline-none cursor-pointer hover:text-neutral-300 transition-colors"
                                     >
@@ -276,11 +276,11 @@ function TableSection({ table, allTables, enums, onTableChange }: TableSectionPr
                                         ))}
                                     </select>
                                     <select
-                                        value={col.references.column}
+                                        value={col.references.referencedColumn}
                                         onChange={(e) => changeFkColumn(col.name, e.target.value)}
                                         className="bg-transparent text-[10px] text-neutral-400 font-mono border-none outline-none cursor-pointer hover:text-neutral-300 transition-colors"
                                     >
-                                        {(allTables.find(t => t.name === col.references!.table)?.columns ?? []).map(c => (
+                                        {(allTables.find(t => t.name === col.references!.referencedTable)?.columns ?? []).map(c => (
                                             <option key={c.name} value={c.name} className="bg-neutral-800 text-neutral-300">{c.name}</option>
                                         ))}
                                     </select>
