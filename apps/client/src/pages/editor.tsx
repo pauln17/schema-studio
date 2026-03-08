@@ -14,7 +14,7 @@ import {
     type Connection,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import EditorSidebar from '@/components/editor-sidebar';
 import EditorNavbar from '@/components/editor-navbar';
 import TableNode from '@/components/table-node';
@@ -57,27 +57,42 @@ function buildEdges(tables: Table[]): Edge[] {
 export default function Editor() {
     const router = useRouter();
     const token = router.query.token as string | undefined;
+    const queryClient = useQueryClient();
 
-    const { data: schemas } = useQuery<Schema | null>({
+    const { data: schemas, isLoading } = useQuery<Schema | null>({
         queryKey: ['schemas', token],
         queryFn: async () => {
-            const res = await fetch('http://localhost:5001/schemas', {
+            return fetch('http://localhost:5001/schemas', {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-            });
-            if (!res.ok) {
-                if (res.status === 429) {
-                    router.replace(`/editor/limit`);
+            }).then(res => {
+                if (!res.ok) {
+                    if (res.status === 429) {
+                        router.replace(`/editor/limit`);
+                        return null;
+                    }
+                    router.push('/editor');
+                    res.json().then(e => console.error('[GET /schemas]', e));
                     return null;
-                }
-                router.replace('/editor/unauthorized');
-                return null;
-            }
-            return res.json();
+                } return res.json();
+            });
         },
-        enabled: !!token && router.isReady,
+        enabled: !!token && router.isReady && !queryClient.getQueryData(['schemas', token]),
+    })
+
+    const updateSchemaMutation = useMutation({
+        mutationFn: async (payload: Partial<Schema>) => {
+            return fetch('http://localhost:5001/schemas', {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            }).then(res => { if (!res.ok) res.json().then(e => console.error('[PUT /schemas]', e)); });
+        },
     });
 
     const [activeTab, setActiveTab] = useState('editor');
@@ -89,8 +104,8 @@ export default function Editor() {
     // Syncs API Data to Local State
     useEffect(() => {
         if (schemas) {
-            setTables(schemas.definition.tables);
-            setEnums(schemas.definition.enums);
+            setTables(schemas.definition.tables ?? []);
+            setEnums(schemas.definition.enums ?? []);
         }
     }, [schemas]);
 
@@ -109,6 +124,20 @@ export default function Editor() {
         (changes: NodeChange[]) => setFlowNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
         [],
     );
+
+    const onNodeDragStop = useCallback((_event: React.MouseEvent, node: Node) => {
+        const tempData = {
+            ...schemas,
+            definition: {
+                enums,
+                tables: tables.map(t => t.name === node.id ? { ...t, position: node.position } : t),
+            }
+        }
+        queryClient.setQueryData(['schemas', token], tempData);
+        // updateSchemaMutation.mutate({ definition: tempData.definition });
+    }, [token, tables]);
+    // First Few Renders -> Undefined Token ETC. 
+
     const onEdgesChange = useCallback(
         (changes: EdgeChange[]) => setFlowEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
         [],
@@ -126,6 +155,7 @@ export default function Editor() {
                 nodeTypes={nodeTypes}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
+                onNodeDragStop={onNodeDragStop}
                 onConnect={onConnect}
                 colorMode="dark"
                 proOptions={{ hideAttribution: true }}
@@ -143,12 +173,22 @@ export default function Editor() {
     };
 
     return (
-        <div className="flex w-screen h-screen overflow-hidden">
-            <EditorSidebar tables={tables} enums={enums} onTablesChange={handleTablesChange} />
-            <div className="flex flex-col flex-1 overflow-hidden">
-                <EditorNavbar activeTab={activeTab} onTabChange={setActiveTab} />
-                {tabContent[activeTab]}
+        !router.isReady || !token || isLoading ? (
+            <div className="flex w-screen h-screen items-center justify-center bg-black">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-600 border-t-neutral-300" />
+                    <p className="text-sm text-neutral-500">Loading Schema...</p>
+                </div>
             </div>
-        </div>
+        ) : (
+            <div className="flex w-screen h-screen overflow-hidden">
+                <EditorSidebar tables={tables} enums={enums} onTablesChange={handleTablesChange} />
+                <div className="flex flex-col flex-1 overflow-hidden">
+                    <EditorNavbar activeTab={activeTab} onTabChange={setActiveTab} />
+                    {tabContent[activeTab]}
+                </div>
+            </div>
+        )
+
     );
 }

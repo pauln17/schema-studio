@@ -6,22 +6,42 @@ import { requireToken } from "./middleware/requireToken";
 
 const router = Router();
 
+
+const columnSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  primaryKey: z.boolean().optional(),
+  unique: z.boolean().optional(),
+  notNull: z.boolean().optional(),
+  default: z.union([z.string(), z.number(), z.boolean()]).optional(),
+  references: z.object({ referencedTable: z.string(), referencedColumn: z.string() }).optional(),
+});
+
+const indexSchema = z.object({
+  indexedColumn: z.string(),
+  name: z.string(),
+});
+
+const tableSchema = z.object({
+  name: z.string(),
+  position: z
+    .object({
+      x: z.coerce.number().default(0),
+      y: z.coerce.number().default(0),
+    })
+    .default({ x: 0, y: 0 }),
+  columns: z.array(columnSchema).default([]),
+  indexes: z.array(indexSchema).default([]),
+});
+
+const enumSchema = z.object({
+  name: z.string(),
+  values: z.array(z.string()),
+});
+
 const definitionSchema = z.object({
-  enums: z.array(z.object({ name: z.string(), values: z.array(z.string()) })),
-  tables: z.array(z.object({
-    name: z.string(),
-    position: z.object({ x: z.number().default(0), y: z.number().default(0) }).default({ x: 0, y: 0 }),
-    columns: z.array(z.object({
-      name: z.string(),
-      type: z.string(),
-      primaryKey: z.boolean().optional(),
-      unique: z.boolean().optional(),
-      notNull: z.boolean().optional(),
-      default: z.string().optional(),
-      references: z.object({ table: z.string(), column: z.string() }).optional(),
-    })),
-    indexes: z.array(z.object({ indexedColumn: z.string(), name: z.string() })),
-  })),
+  enums: z.array(enumSchema).default([]),
+  tables: z.array(tableSchema).default([]),
 });
 
 router.get("/", requireToken(), async (req: Request, res: Response) => {
@@ -47,7 +67,10 @@ router.post("/", async (req: Request, res: Response) => {
   });
 
   const result = schemaObject.safeParse(req.body);
-  if (!result.success) return res.status(400).json({ error: result.error.message });
+  if (!result.success) {
+    console.error("[POST /schemas] Validation failed:", result.error.issues);
+    return res.status(400).json({ error: result.error.message });
+  }
 
   const { name, definition } = result.data;
   try {
