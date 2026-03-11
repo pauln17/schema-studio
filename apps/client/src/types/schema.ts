@@ -10,7 +10,7 @@ export interface Column {
 
 export interface Enum {
   name: string;
-  values: string[];
+  options: string[];
 }
 
 export interface Index {

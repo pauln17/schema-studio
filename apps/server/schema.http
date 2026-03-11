@@ -1,5 +1,6 @@
 @baseUrl = http://localhost:5001
-@token = 99c4394912c2b62c33b857c36d71119b727dfed24413b957e1aca3195f6ceb17
+@token = 6013739153be6e4bf9c60899b087e48fcbf650d140a1440bd22660b7d1598dd0
+
 
 ### Get Schema
 GET {{baseUrl}}/schemas
@@ -12,10 +13,6 @@ Content-Type: application/json
 {
   "name": "Example Schema",
   "definition": {
-    "enums": [
-      { "name": "user_role", "values": ["admin", "member", "guest"] },
-      { "name": "post_status", "values": ["draft", "published", "archived"] }
-    ],
     "tables": [
       {
         "name": "users",
@@ -82,6 +79,10 @@ Content-Type: application/json
         ],
         "indexes": []
       }
+    ],
+    "enums": [
+      { "name": "user_role", "options": ["admin", "member", "guest"] },
+      { "name": "post_status", "options": ["draft", "published", "archived"] }
     ]
   }
 }

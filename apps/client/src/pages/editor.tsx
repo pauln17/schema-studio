@@ -115,7 +115,7 @@ export default function Editor() {
     setFlowEdges(buildEdges(tables));
   }, [tables, enums]);
 
-  const handleTableNameSubmit = useCallback(
+  const renameTable = useCallback(
     (oldName: string, newName: string) => {
       setTables(
         tables.map((t) => (t.name === oldName ? { ...t, name: newName } : t)),
@@ -133,17 +133,17 @@ export default function Editor() {
     [enums, schemas, tables, updateQueryCache],
   );
 
-  const handleColumnNameSubmit = useCallback(
+  const renameColumn = useCallback(
     (tableName: string, oldName: string, newName: string) => {
       setTables(
         tables.map((t) =>
           t.name === tableName
             ? {
-                ...t,
-                columns: t.columns.map((c) =>
-                  c.name === oldName ? { ...c, name: newName } : c,
-                ),
-              }
+              ...t,
+              columns: t.columns.map((c) =>
+                c.name === oldName ? { ...c, name: newName } : c,
+              ),
+            }
             : t,
         ),
       );
@@ -154,11 +154,11 @@ export default function Editor() {
           tables: tables.map((t) =>
             t.name === tableName
               ? {
-                  ...t,
-                  columns: t.columns.map((c) =>
-                    c.name === oldName ? { ...c, name: newName } : c,
-                  ),
-                }
+                ...t,
+                columns: t.columns.map((c) =>
+                  c.name === oldName ? { ...c, name: newName } : c,
+                ),
+              }
               : t,
           ),
         },
@@ -167,7 +167,7 @@ export default function Editor() {
     [enums, schemas, tables, updateQueryCache],
   );
 
-  const handleTablesChange = useCallback(
+  const updateTables = useCallback(
     (updated: Table[]) => {
       setTables(updated);
       updateQueryCache({
@@ -181,7 +181,14 @@ export default function Editor() {
     [enums, schemas, updateQueryCache],
   );
 
-  const handleEnumsChange = useCallback(
+  const deleteTable = useCallback(
+    (tableName: string) => {
+      updateTables(tables.filter((t) => t.name !== tableName));
+    },
+    [tables, updateTables],
+  );
+
+  const updateEnums = useCallback(
     (updated: Enum[]) => {
       setEnums(updated);
       updateQueryCache({
@@ -195,7 +202,14 @@ export default function Editor() {
     [schemas, updateQueryCache],
   );
 
-  const handleEnumNameSubmit = useCallback(
+  const deleteEnum = useCallback(
+    (enumName: string) => {
+      updateEnums(enums.filter((e) => e.name !== enumName));
+    },
+    [enums, updateEnums],
+  );
+
+  const renameEnum = useCallback(
     (oldName: string, newName: string) => {
       const updated = enums.map((e) =>
         e.name === oldName ? { ...e, name: newName } : e,
@@ -212,18 +226,18 @@ export default function Editor() {
     [enums, schemas, updateQueryCache],
   );
 
-  const handleValueNameSubmit = useCallback(
+  const renameEnumOption = useCallback(
     (enumName: string, oldName: string, newName: string) => {
       const trimmed = newName.trim();
       if (!trimmed || trimmed === oldName) return;
       const updated = enums.map((e) =>
         e.name === enumName
           ? {
-              ...e,
-              values: (e.values ?? []).map((v) =>
-                v === oldName ? trimmed : v,
-              ),
-            }
+            ...e,
+            options: (e.options ?? []).map((v) =>
+              v === oldName ? trimmed : v,
+            ),
+          }
           : e,
       );
       setEnums(updated);
@@ -312,12 +326,14 @@ export default function Editor() {
       <EditorSidebar
         tables={tables}
         enums={enums}
-        onTablesChange={handleTablesChange}
-        handleTableNameSubmit={handleTableNameSubmit}
-        handleColumnNameSubmit={handleColumnNameSubmit}
-        handleEnumsChange={handleEnumsChange}
-        handleEnumNameSubmit={handleEnumNameSubmit}
-        handleValueNameSubmit={handleValueNameSubmit}
+        updateTables={updateTables}
+        deleteTable={deleteTable}
+        renameTable={renameTable}
+        renameColumn={renameColumn}
+        updateEnums={updateEnums}
+        deleteEnum={deleteEnum}
+        renameEnum={renameEnum}
+        renameEnumOption={renameEnumOption}
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <EditorNavbar activeTab={activeTab} onTabChange={setActiveTab} />

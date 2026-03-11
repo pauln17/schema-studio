@@ -4,16 +4,18 @@ import type { Column, Table, Enum, Index } from "@/types/schema";
 interface EditorSidebarProps {
   tables: Table[];
   enums: Enum[];
-  onTablesChange: (tables: Table[]) => void;
-  handleTableNameSubmit: (oldName: string, newName: string) => void;
-  handleColumnNameSubmit: (
+  updateTables: (tables: Table[]) => void;
+  deleteTable: (tableName: string) => void;
+  renameTable: (oldName: string, newName: string) => void;
+  renameColumn: (
     tableName: string,
     oldName: string,
     newName: string,
   ) => void;
-  handleEnumsChange: (enums: Enum[]) => void;
-  handleEnumNameSubmit: (oldName: string, newName: string) => void;
-  handleValueNameSubmit: (
+  updateEnums: (enums: Enum[]) => void;
+  deleteEnum: (enumName: string) => void;
+  renameEnum: (oldName: string, newName: string) => void;
+  renameEnumOption: (
     enumName: string,
     oldName: string,
     newName: string,
@@ -24,10 +26,10 @@ interface TableSectionProps {
   table: Table;
   allTables: Table[];
   enums: Enum[];
-  onTableChange: (updated: Table) => void;
-  onDeleteTable: (tableName: string) => void;
-  handleTableNameSubmit: (oldName: string, newName: string) => void;
-  handleColumnNameSubmit: (
+  updateTable: (updated: Table) => void;
+  deleteTable: (tableName: string) => void;
+  renameTable: (oldName: string, newName: string) => void;
+  renameColumn: (
     tableName: string,
     oldName: string,
     newName: string,
@@ -36,10 +38,10 @@ interface TableSectionProps {
 
 interface EnumSectionProps {
   enum: Enum;
-  onEnumChange: (updated: Enum) => void;
-  onDeleteEnum: (enumName: string) => void;
-  handleEnumNameSubmit: (oldName: string, newName: string) => void;
-  handleValueNameSubmit: (
+  updateEnum: (updated: Enum) => void;
+  deleteEnum: (enumName: string) => void;
+  renameEnum: (oldName: string, newName: string) => void;
+  renameEnumOption: (
     enumName: string,
     oldName: string,
     newName: string,
@@ -95,7 +97,7 @@ function ConstraintToggle({
   );
 }
 
-function DeleteIcon({ title }: { title?: string }) {
+function DeleteIcon() {
   return (
     <svg
       className="w-3.5 h-3.5 cursor-pointer"
@@ -105,7 +107,6 @@ function DeleteIcon({ title }: { title?: string }) {
       strokeWidth={2}
       aria-hidden
     >
-      {title ? <title>{title}</title> : null}
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -119,10 +120,10 @@ function TableSection({
   table,
   allTables,
   enums,
-  onTableChange,
-  onDeleteTable,
-  handleTableNameSubmit,
-  handleColumnNameSubmit,
+  updateTable,
+  deleteTable,
+  renameTable,
+  renameColumn,
 }: TableSectionProps) {
   const [expanded, setExpanded] = useState(false);
   const [editingDefaultColumn, setEditingDefaultColumn] = useState<
@@ -150,7 +151,7 @@ function TableSection({
       n += 1;
       name = `${base}_${n}`;
     }
-    onTableChange({
+    updateTable({
       ...table,
       columns: [...tableColumns, { name, type: "TEXT" }],
     });
@@ -158,7 +159,7 @@ function TableSection({
 
   // Updates Column in Table By Accepting a Partial<Column> Input (Everything is Optional -> Only Updates Fields Given) -> Returns Updated Table Object
   const updateColumn = (colName: string, patch: Partial<Column>) => {
-    onTableChange({
+    updateTable({
       ...table,
       columns: tableColumns.map((c) =>
         c.name === colName ? { ...c, ...patch } : c,
@@ -256,25 +257,26 @@ function TableSection({
     )!.name;
     const name = `idx_${table.name}_${firstNonIndexedCol}`;
     const newIndex: Index = { indexedColumn: firstNonIndexedCol, name };
-    onTableChange({ ...table, indexes: [...tableIndexes, newIndex] });
+    updateTable({ ...table, indexes: [...tableIndexes, newIndex] });
   };
 
   const updateIndex = (idxName: string, patch: Partial<Index>) => {
+    console.log('test')
     const updated = tableIndexes.map((i) =>
       i.name === idxName ? { ...i, ...patch } : i,
     );
-    onTableChange({ ...table, indexes: updated });
+    updateTable({ ...table, indexes: updated });
   };
 
-  const removeIndex = (idxName: string) => {
-    onTableChange({
+  const deleteIndex = (idxName: string) => {
+    updateTable({
       ...table,
       indexes: tableIndexes.filter((i) => i.name !== idxName),
     });
   };
 
-  const removeColumn = (colName: string) => {
-    onTableChange({
+  const deleteColumn = (colName: string) => {
+    updateTable({
       ...table,
       columns: tableColumns.filter((c) => c.name !== colName),
       indexes: tableIndexes.filter((i) => i.indexedColumn !== colName),
@@ -338,7 +340,7 @@ function TableSection({
               onBlur={(e) => {
                 const newName = e.target.value.trim();
                 if (newName && newName !== table.name)
-                  handleTableNameSubmit(table.name, newName);
+                  renameTable(table.name, newName);
                 setEditingTableName(false);
               }}
               onKeyDown={(e) => {
@@ -369,7 +371,7 @@ function TableSection({
           </span>
           <button
             type="button"
-            onClick={() => onDeleteTable(table.name)}
+            onClick={() => deleteTable(table.name)}
             className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
             title="Delete table"
           >
@@ -435,7 +437,7 @@ function TableSection({
                       onBlur={(e) => {
                         const newName = e.target.value.trim();
                         if (newName && newName !== col.name)
-                          handleColumnNameSubmit(table.name, col.name, newName);
+                          renameColumn(table.name, col.name, newName);
                         setEditingColumnName(null);
                       }}
                       onKeyDown={(e) => {
@@ -520,7 +522,7 @@ function TableSection({
                 </div>
                 <button
                   type="button"
-                  onClick={() => removeColumn(col.name)}
+                  onClick={() => deleteColumn(col.name)}
                   className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
                   title="Delete column"
                 >
@@ -554,40 +556,40 @@ function TableSection({
                 {/* Conditionally Rendered Text Bar For Default Value */}
                 {(col.default !== undefined ||
                   editingDefaultColumn === col.name) && (
-                  <div className="flex items-center gap-3 shrink-0 h-5">
-                    {editingDefaultColumn === col.name ? (
-                      <input
-                        type="text"
-                        maxLength={10}
-                        placeholder="value"
-                        defaultValue={col.default || ""}
-                        className="w-20 max-w-[100px] h-5 px-1.5 text-[10px] font-mono leading-none bg-white/[0.06] border border-white/[0.08] rounded text-neutral-300 placeholder-neutral-600 outline-none focus:border-emerald-500/50 box-border"
-                        onBlur={(e) => {
-                          const v = e.target.value.trim();
-                          changeDefault(col.name, v);
-                          setEditingDefaultColumn(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter")
-                            (e.target as HTMLInputElement).blur();
-                          if (e.key === "Escape") setEditingTableName(false);
-                        }}
-                        autoFocus
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setEditingDefaultColumn(col.name)}
-                        className="text-[10px] font-mono text-emerald-400/90 hover:text-emerald-400 cursor-pointer"
-                      >
-                        ={" "}
-                        {col.default != null && String(col.default).trim()
-                          ? String(col.default)
-                          : "value"}
-                      </button>
-                    )}
-                  </div>
-                )}
+                    <div className="flex items-center gap-3 shrink-0 h-5">
+                      {editingDefaultColumn === col.name ? (
+                        <input
+                          type="text"
+                          maxLength={10}
+                          placeholder="value"
+                          defaultValue={col.default || ""}
+                          className="w-20 max-w-[100px] h-5 px-1.5 text-[10px] font-mono leading-none bg-white/[0.06] border border-white/[0.08] rounded text-neutral-300 placeholder-neutral-600 outline-none focus:border-emerald-500/50 box-border"
+                          onBlur={(e) => {
+                            const v = e.target.value.trim();
+                            changeDefault(col.name, v);
+                            setEditingDefaultColumn(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              (e.target as HTMLInputElement).blur();
+                            if (e.key === "Escape") setEditingTableName(false);
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setEditingDefaultColumn(col.name)}
+                          className="text-[10px] font-mono text-emerald-400/90 hover:text-emerald-400 cursor-pointer"
+                        >
+                          ={" "}
+                          {col.default != null && String(col.default).trim()
+                            ? String(col.default)
+                            : "value"}
+                        </button>
+                      )}
+                    </div>
+                  )}
               </div>
 
               {/* Dropdown Menu for FK Target Table and Column */}
@@ -677,12 +679,6 @@ function TableSection({
                     (c) =>
                       c.name === indexedCol || !indexedByOthers.has(c.name),
                   );
-                  const handleColumnChange = (newCol: string) => {
-                    updateIndex(idx.name, {
-                      indexedColumn: newCol,
-                      name: `idx_${table.name}_${newCol}`,
-                    });
-                  };
 
                   return (
                     <div
@@ -691,7 +687,10 @@ function TableSection({
                     >
                       <select
                         value={indexedCol}
-                        onChange={(e) => handleColumnChange(e.target.value)}
+                        onChange={(e) => updateIndex(idx.name, {
+                          indexedColumn: e.target.value,
+                          name: `idx_${table.name}_${e.target.value}`,
+                        })}
                         className="flex-1 min-w-0 bg-white/[0.04] border border-white/[0.06] rounded px-2 py-1 text-[10px] font-mono text-neutral-400 outline-none focus:border-violet-500/50 cursor-pointer"
                       >
                         {availableColumns.map((c) => (
@@ -705,23 +704,11 @@ function TableSection({
                         ))}
                       </select>
                       <button
-                        onClick={() => removeIndex(idx.name)}
-                        className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
+                        onClick={() => deleteIndex(idx.name)}
+                        className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
                         title="Remove index"
                       >
-                        <svg
-                          className="w-3 h-3"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
+                        <DeleteIcon />
                       </button>
                     </div>
                   );
@@ -758,32 +745,32 @@ function TableSection({
 
 function EnumSection({
   enum: enumItem,
-  onEnumChange,
-  onDeleteEnum,
-  handleEnumNameSubmit,
-  handleValueNameSubmit,
+  updateEnum,
+  deleteEnum,
+  renameEnum,
+  renameEnumOption,
 }: EnumSectionProps) {
   const [expanded, setExpanded] = useState(false);
   const [editingEnumName, setEditingEnumName] = useState(false);
   const [editingValue, setEditingValue] = useState<string | null>(null);
-  const enumValues = enumItem.values ?? [];
+  const enumOptions = enumItem.options ?? [];
 
-  const removeValue = (value: string) => {
-    onEnumChange({
+  const removeOption = (value: string) => {
+    updateEnum({
       ...enumItem,
-      values: enumValues.filter((v) => v !== value),
+      options: enumOptions.filter((v) => v !== value),
     });
   };
 
-  const addValue = () => {
+  const createOption = () => {
     const base = "value";
     let name = base;
     let n = 0;
-    while (enumValues.some((v) => v === name)) {
+    while (enumOptions.some((v) => v === name)) {
       n += 1;
       name = `${base}_${n}`;
     }
-    onEnumChange({ ...enumItem, values: [...enumValues, name] });
+    updateEnum({ ...enumItem, options: [...enumOptions, name] });
   };
 
   return (
@@ -842,7 +829,7 @@ function EnumSection({
               onBlur={(e) => {
                 const newName = e.target.value.trim();
                 if (newName && newName !== enumItem.name)
-                  handleEnumNameSubmit(enumItem.name, newName);
+                  renameEnum(enumItem.name, newName);
                 setEditingEnumName(false);
               }}
               onKeyDown={(e) => {
@@ -869,11 +856,11 @@ function EnumSection({
           onClick={(e) => e.stopPropagation()}
         >
           <span className="text-[10px] text-neutral-500 font-mono">
-            {enumValues.length}
+            {enumOptions.length}
           </span>
           <button
             type="button"
-            onClick={() => onDeleteEnum(enumItem.name)}
+            onClick={() => deleteEnum(enumItem.name)}
             className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
             title="Delete enum"
           >
@@ -885,7 +872,7 @@ function EnumSection({
       {/* Enum Values */}
       {expanded && (
         <div>
-          {enumValues.map((value) => (
+          {enumOptions.map((value) => (
             <div
               key={value}
               className="flex items-center gap-2 px-3 py-1.5 ml-3 border-b border-white/[0.03] last:border-b-0 hover:bg-white/[0.02] transition-colors"
@@ -898,7 +885,7 @@ function EnumSection({
                     defaultValue={value}
                     className="flex-1 min-w-0 h-5 px-1.5 text-[10px] font-mono leading-none bg-white/[0.06] border border-white/[0.08] rounded text-neutral-300 placeholder-neutral-600 outline-none focus:border-emerald-500/50 box-border text-xs"
                     onBlur={(e) => {
-                      handleValueNameSubmit(
+                      renameEnumOption(
                         enumItem.name,
                         value,
                         e.target.value,
@@ -924,7 +911,7 @@ function EnumSection({
               </div>
               <button
                 type="button"
-                onClick={() => removeValue(value)}
+                onClick={() => removeOption(value)}
                 className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
                 title="Delete value"
               >
@@ -934,7 +921,7 @@ function EnumSection({
           ))}
 
           <button
-            onClick={addValue}
+            onClick={createOption}
             className="cursor-pointer w-full flex items-center justify-center gap-1.5 px-3 py-2 text-neutral-500 hover:text-emerald-400 hover:bg-white/[0.04] transition-colors"
           >
             <svg
@@ -961,43 +948,37 @@ function EnumSection({
 function EditorSidebar({
   tables,
   enums,
-  onTablesChange,
-  handleTableNameSubmit,
-  handleColumnNameSubmit,
-  handleEnumsChange,
-  handleEnumNameSubmit,
-  handleValueNameSubmit,
+  updateTables,
+  deleteTable,
+  renameTable,
+  renameColumn,
+  updateEnums,
+  deleteEnum,
+  renameEnum,
+  renameEnumOption,
 }: EditorSidebarProps) {
-  const handleTableChange = (updated: Table) => {
-    onTablesChange(tables.map((t) => (t.name === updated.name ? updated : t)));
+  const updateTable = (updated: Table) => {
+    updateTables(tables.map((t) => (t.name === updated.name ? updated : t)));
   };
 
-  const handleCreateTable = (name: string) => {
+  const createTable = (name: string) => {
     const newTable: Table = {
       name,
       position: { x: 0, y: 0 },
       columns: [],
       indexes: [],
     };
-    onTablesChange([...tables, newTable]);
+    updateTables([...tables, newTable]);
   };
 
-  const handleEnumChange = (updated: Enum) => {
-    handleEnumsChange(
+  const updateEnum = (updated: Enum) => {
+    updateEnums(
       enums.map((e) => (e.name === updated.name ? updated : e)),
     );
   };
 
-  const handleCreateEnum = (name: string) => {
-    handleEnumsChange([...enums, { name, values: [] }]);
-  };
-
-  const handleDeleteTable = (tableName: string) => {
-    onTablesChange(tables.filter((t) => t.name !== tableName));
-  };
-
-  const handleDeleteEnum = (enumName: string) => {
-    handleEnumsChange(enums.filter((e) => e.name !== enumName));
+  const createEnum = (name: string) => {
+    updateEnums([...enums, { name, options: [] }]);
   };
 
   return (
@@ -1008,7 +989,7 @@ function EditorSidebar({
           Tables
         </h3>
         <button
-          onClick={() => handleCreateTable("New Table")}
+          onClick={() => createTable("New Table")}
           className="cursor-pointer text-neutral-500 hover:text-blue-400 transition-colors p-1 rounded-md hover:bg-white/[0.06]"
         >
           <svg
@@ -1037,10 +1018,10 @@ function EditorSidebar({
               table={table}
               allTables={tables}
               enums={enums}
-              onTableChange={handleTableChange}
-              onDeleteTable={handleDeleteTable}
-              handleTableNameSubmit={handleTableNameSubmit}
-              handleColumnNameSubmit={handleColumnNameSubmit}
+              updateTable={updateTable}
+              deleteTable={deleteTable}
+              renameTable={renameTable}
+              renameColumn={renameColumn}
             />
           ))}
         </div>
@@ -1051,7 +1032,7 @@ function EditorSidebar({
               Enums
             </h3>
             <button
-              onClick={() => handleCreateEnum("New Enum")}
+              onClick={() => createEnum("New Enum")}
               className="cursor-pointer text-neutral-500 hover:text-emerald-400 transition-colors p-1 rounded-md hover:bg-white/[0.06]"
             >
               <svg
@@ -1075,10 +1056,10 @@ function EditorSidebar({
               <EnumSection
                 key={enumItem.name}
                 enum={enumItem}
-                onEnumChange={handleEnumChange}
-                onDeleteEnum={handleDeleteEnum}
-                handleEnumNameSubmit={handleEnumNameSubmit}
-                handleValueNameSubmit={handleValueNameSubmit}
+                updateEnum={updateEnum}
+                deleteEnum={deleteEnum}
+                renameEnum={renameEnum}
+                renameEnumOption={renameEnumOption}
               />
             ))}
           </div>

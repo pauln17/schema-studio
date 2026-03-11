@@ -37,12 +37,12 @@ const tableSchema = z.object({
 
 const enumSchema = z.object({
   name: z.string(),
-  values: z.array(z.string()),
+  options: z.array(z.string()),
 });
 
 const definitionSchema = z.object({
-  enums: z.array(enumSchema).default([]),
   tables: z.array(tableSchema).default([]),
+  enums: z.array(enumSchema).default([]),
 });
 
 router.get("/", requireToken(), async (req: Request, res: Response) => {
