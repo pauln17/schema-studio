@@ -6,7 +6,6 @@ import { requireToken } from "./middleware/requireToken";
 
 const router = Router();
 
-
 const columnSchema = z.object({
   name: z.string(),
   type: z.string(),
@@ -14,7 +13,9 @@ const columnSchema = z.object({
   unique: z.boolean().optional(),
   notNull: z.boolean().optional(),
   default: z.union([z.string(), z.number(), z.boolean()]).optional(),
-  references: z.object({ referencedTable: z.string(), referencedColumn: z.string() }).optional(),
+  references: z
+    .object({ referencedTable: z.string(), referencedColumn: z.string() })
+    .optional(),
 });
 
 const indexSchema = z.object({
@@ -51,12 +52,22 @@ router.get("/", requireToken(), async (req: Request, res: Response) => {
   try {
     const schema = await prisma.schema.findUnique({
       where: { id: schemaId, token: { tokenHash: hashedToken } },
-      select: { id: true, name: true, definition: true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        name: true,
+        definition: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
     if (!schema) return res.status(404).json({ error: "Schema Not Found" });
     return res.status(200).json(schema);
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : "Internal Server Error" });
+    return res
+      .status(500)
+      .json({
+        error: error instanceof Error ? error.message : "Internal Server Error",
+      });
   }
 });
 
@@ -84,11 +95,14 @@ router.post("/", async (req: Request, res: Response) => {
         tokenHash: hashToken(rawToken),
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
       },
-
     });
     return res.status(201).json({ schema, token: rawToken });
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : "Internal Server Error" });
+    return res
+      .status(500)
+      .json({
+        error: error instanceof Error ? error.message : "Internal Server Error",
+      });
   }
 });
 
@@ -106,15 +120,18 @@ router.put("/", requireToken(), async (req: Request, res: Response) => {
     })
     .transform((data) =>
       Object.fromEntries(
-        Object.entries(data).filter(([, v]) => v !== undefined)
-      )
+        Object.entries(data).filter(([, v]) => v !== undefined),
+      ),
     );
 
   const result = schemaObject.safeParse(req.body);
-  if (!result.success) return res.status(400).json({ error: result.error.message });
+  if (!result.success)
+    return res.status(400).json({ error: result.error.message });
 
   try {
-    const existing = await prisma.schema.findUnique({ where: { id: schemaId, token: { tokenHash: hashedToken } } });
+    const existing = await prisma.schema.findUnique({
+      where: { id: schemaId, token: { tokenHash: hashedToken } },
+    });
     if (!existing) return res.status(404).json({ error: "Schema Not Found" });
 
     const schema = await prisma.schema.update({
@@ -123,7 +140,11 @@ router.put("/", requireToken(), async (req: Request, res: Response) => {
     });
     return res.status(200).json(schema);
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : "Internal Server Error" });
+    return res
+      .status(500)
+      .json({
+        error: error instanceof Error ? error.message : "Internal Server Error",
+      });
   }
 });
 
@@ -132,13 +153,21 @@ router.delete("/", requireToken(), async (req: Request, res: Response) => {
   const hashedToken = req.token!;
 
   try {
-    const existing = await prisma.schema.findUnique({ where: { id: schemaId, token: { tokenHash: hashedToken } } });
+    const existing = await prisma.schema.findUnique({
+      where: { id: schemaId, token: { tokenHash: hashedToken } },
+    });
     if (!existing) return res.status(404).json({ error: "Schema Not Found" });
 
-    await prisma.schema.delete({ where: { id: schemaId, token: { tokenHash: hashedToken } } });
+    await prisma.schema.delete({
+      where: { id: schemaId, token: { tokenHash: hashedToken } },
+    });
     return res.status(204).send();
   } catch (error) {
-    return res.status(500).json({ error: error instanceof Error ? error.message : "Internal Server Error" });
+    return res
+      .status(500)
+      .json({
+        error: error instanceof Error ? error.message : "Internal Server Error",
+      });
   }
 });
 
