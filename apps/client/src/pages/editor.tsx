@@ -128,7 +128,7 @@ export default function Editor() {
   // Syncs API Data to Local State
   useEffect(() => {
     if (schemas) {
-      setLastSavedData((prev) => (prev ?? schemas));
+      setLastSavedData((prev) => prev ?? schemas);
       setTables(schemas.definition.tables ?? []);
       setEnums(schemas.definition.enums ?? []);
     }
@@ -139,7 +139,7 @@ export default function Editor() {
       !!schemas &&
       !!lastSavedData &&
       JSON.stringify(schemas.definition) !==
-      JSON.stringify(lastSavedData.definition),
+        JSON.stringify(lastSavedData.definition),
     [schemas, lastSavedData],
   );
 
@@ -197,11 +197,11 @@ export default function Editor() {
         tables.map((t) =>
           t.name === tableName
             ? {
-              ...t,
-              columns: t.columns.map((c) =>
-                c.name === oldName ? { ...c, name: newName } : c,
-              ),
-            }
+                ...t,
+                columns: t.columns.map((c) =>
+                  c.name === oldName ? { ...c, name: newName } : c,
+                ),
+              }
             : t,
         ),
       );
@@ -212,11 +212,11 @@ export default function Editor() {
           tables: tables.map((t) =>
             t.name === tableName
               ? {
-                ...t,
-                columns: t.columns.map((c) =>
-                  c.name === oldName ? { ...c, name: newName } : c,
-                ),
-              }
+                  ...t,
+                  columns: t.columns.map((c) =>
+                    c.name === oldName ? { ...c, name: newName } : c,
+                  ),
+                }
               : t,
           ),
         },
@@ -291,11 +291,11 @@ export default function Editor() {
       const updated = enums.map((e) =>
         e.name === enumName
           ? {
-            ...e,
-            options: (e.options ?? []).map((v) =>
-              v === oldName ? trimmed : v,
-            ),
-          }
+              ...e,
+              options: (e.options ?? []).map((v) =>
+                v === oldName ? trimmed : v,
+              ),
+            }
           : e,
       );
       setEnums(updated);
@@ -395,6 +395,7 @@ export default function Editor() {
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <EditorNavbar
+          token={token}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           saveSchema={saveSchema}
