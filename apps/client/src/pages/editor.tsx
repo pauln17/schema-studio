@@ -58,8 +58,8 @@ export default function Editor() {
   const token = router.query.token as string | undefined;
   const queryClient = useQueryClient();
 
-  const { data: schemas, isLoading } = useQuery<Schema | null>({
-    queryKey: ["schemas", token],
+  const { data: schema, isLoading } = useQuery<Schema | null>({
+    queryKey: ["schema", token],
     queryFn: async () => {
       const res = await fetch("http://localhost:5001/schemas", {
         headers: {
@@ -74,7 +74,7 @@ export default function Editor() {
         }
         router.push("/editor");
         const e = await res.json();
-        console.error("[GET /schemas]", e);
+        console.error("[GET /schema]", e);
         return null;
       }
       return res.json();
@@ -82,14 +82,13 @@ export default function Editor() {
     enabled:
       !!token &&
       router.isReady &&
-      typeof window !== "undefined" &&
-      !localStorage.getItem("REACT_QUERY_OFFLINE_CACHE"),
+      !queryClient.getQueryData<Schema>(["schema", token]),
   });
 
   const { mutate: saveSchema, isPending } = useMutation({
     mutationFn: async () => {
       if (token === undefined) throw new Error("No Token to Save Schema");
-      const cacheData = queryClient.getQueryData<Schema>(["schemas", token]);
+      const cacheData = queryClient.getQueryData<Schema>(["schema", token]);
       if (cacheData === undefined) throw new Error("No Schema Data to Save");
 
       const res = await fetch("http://localhost:5001/schemas", {
@@ -104,14 +103,14 @@ export default function Editor() {
       return res.json();
     },
     onSuccess: () => {
-      const cacheData = queryClient.getQueryData<Schema>(["schemas", token]);
+      const cacheData = queryClient.getQueryData<Schema>(["schema", token]);
       if (cacheData) setLastSavedData(cacheData);
     },
   });
 
   const updateQueryCache = useCallback(
     (data: Schema) => {
-      queryClient.setQueryData(["schemas", token], data);
+      queryClient.setQueryData(["schema", token], data);
     },
     [queryClient, token],
   );
@@ -127,20 +126,20 @@ export default function Editor() {
 
   // Syncs API Data to Local State
   useEffect(() => {
-    if (schemas) {
-      setLastSavedData((prev) => prev ?? schemas);
-      setTables(schemas.definition.tables ?? []);
-      setEnums(schemas.definition.enums ?? []);
+    if (schema) {
+      setLastSavedData((prev) => prev ?? schema);
+      setTables(schema.definition.tables ?? []);
+      setEnums(schema.definition.enums ?? []);
     }
-  }, [schemas]);
+  }, [schema]);
 
   const hasUnsavedChanges = useMemo(
     () =>
-      !!schemas &&
+      !!schema &&
       !!lastSavedData &&
-      JSON.stringify(schemas.definition) !==
+      JSON.stringify(schema.definition) !==
         JSON.stringify(lastSavedData.definition),
-    [schemas, lastSavedData],
+    [schema, lastSavedData],
   );
 
   // Warn before refresh/close when there are unsaved changes.
@@ -163,7 +162,7 @@ export default function Editor() {
     const discardToken = localStorage.getItem("DISCARD_CACHE_ON_LOAD");
     if (discardToken === token) {
       localStorage.removeItem("DISCARD_CACHE_ON_LOAD");
-      queryClient.removeQueries({ queryKey: ["schemas", token] });
+      queryClient.removeQueries({ queryKey: ["schema", token] });
     }
   }, [queryClient, token, router.isReady]);
 
@@ -179,7 +178,7 @@ export default function Editor() {
         tables.map((t) => (t.name === oldName ? { ...t, name: newName } : t)),
       );
       updateQueryCache({
-        ...schemas,
+        ...schema,
         definition: {
           enums,
           tables: tables.map((t) =>
@@ -188,7 +187,7 @@ export default function Editor() {
         },
       } as Schema);
     },
-    [enums, schemas, tables, updateQueryCache],
+    [enums, schema, tables, updateQueryCache],
   );
 
   const renameColumn = useCallback(
@@ -206,7 +205,7 @@ export default function Editor() {
         ),
       );
       updateQueryCache({
-        ...schemas,
+        ...schema,
         definition: {
           enums,
           tables: tables.map((t) =>
@@ -222,21 +221,21 @@ export default function Editor() {
         },
       } as Schema);
     },
-    [enums, schemas, tables, updateQueryCache],
+    [enums, schema, tables, updateQueryCache],
   );
 
   const updateTables = useCallback(
     (updated: Table[]) => {
       setTables(updated);
       updateQueryCache({
-        ...schemas,
+        ...schema,
         definition: {
           enums,
           tables: updated,
         },
       } as Schema);
     },
-    [enums, schemas, updateQueryCache],
+    [enums, schema, updateQueryCache],
   );
 
   const deleteTable = useCallback(
@@ -250,14 +249,14 @@ export default function Editor() {
     (updated: Enum[]) => {
       setEnums(updated);
       updateQueryCache({
-        ...schemas,
+        ...schema,
         definition: {
-          ...schemas?.definition,
+          ...schema?.definition,
           enums: updated,
         },
       } as Schema);
     },
-    [schemas, updateQueryCache],
+    [schema, updateQueryCache],
   );
 
   const deleteEnum = useCallback(
@@ -274,14 +273,14 @@ export default function Editor() {
       );
       setEnums(updated);
       updateQueryCache({
-        ...schemas,
+        ...schema,
         definition: {
-          ...schemas?.definition,
+          ...schema?.definition,
           enums: updated,
         },
       } as Schema);
     },
-    [enums, schemas, updateQueryCache],
+    [enums, schema, updateQueryCache],
   );
 
   const renameEnumOption = useCallback(
@@ -300,14 +299,14 @@ export default function Editor() {
       );
       setEnums(updated);
       updateQueryCache({
-        ...schemas,
+        ...schema,
         definition: {
-          ...schemas?.definition,
+          ...schema?.definition,
           enums: updated,
         },
       } as Schema);
     },
-    [enums, schemas, updateQueryCache],
+    [enums, schema, updateQueryCache],
   );
 
   // Custom Node Types for React Flow -> React Flow Matches Node Types to Component Names to Generate Nodes
@@ -322,7 +321,7 @@ export default function Editor() {
   const onNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       const tempData = {
-        ...schemas,
+        ...schema,
         definition: {
           enums,
           tables: tables.map((t) =>
@@ -332,7 +331,7 @@ export default function Editor() {
       };
       updateQueryCache(tempData as Schema);
     },
-    [enums, schemas, tables, updateQueryCache],
+    [enums, schema, tables, updateQueryCache],
   );
   // First Few Renders -> Undefined Token ETC.
 
@@ -395,7 +394,8 @@ export default function Editor() {
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <EditorNavbar
-          token={token}
+          schema={schema ?? null}
+          token={token ?? ""}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           saveSchema={saveSchema}

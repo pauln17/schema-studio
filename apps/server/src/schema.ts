@@ -63,11 +63,9 @@ router.get("/", requireToken(), async (req: Request, res: Response) => {
     if (!schema) return res.status(404).json({ error: "Schema Not Found" });
     return res.status(200).json(schema);
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        error: error instanceof Error ? error.message : "Internal Server Error",
-      });
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : "Internal Server Error",
+    });
   }
 });
 
@@ -98,11 +96,9 @@ router.post("/", async (req: Request, res: Response) => {
     });
     return res.status(201).json({ schema, token: rawToken });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        error: error instanceof Error ? error.message : "Internal Server Error",
-      });
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : "Internal Server Error",
+    });
   }
 });
 
@@ -140,11 +136,35 @@ router.put("/", requireToken(), async (req: Request, res: Response) => {
     });
     return res.status(200).json(schema);
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        error: error instanceof Error ? error.message : "Internal Server Error",
-      });
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : "Internal Server Error",
+    });
+  }
+});
+
+router.put("/token", requireToken(), async (req: Request, res: Response) => {
+  const schemaId = req.schema!.id;
+  const hashedToken = req.token!;
+
+  try {
+    const existing = await prisma.schemaToken.findUnique({
+      where: { schemaId, tokenHash: hashedToken },
+    });
+    if (!existing) return res.status(404).json({ error: "Schema Not Found" });
+
+    const rawToken = generateToken();
+    await prisma.schemaToken.update({
+      where: { schemaId, tokenHash: hashedToken },
+      data: {
+        tokenHash: hashToken(rawToken),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+      },
+    });
+    return res.status(200).json({ token: rawToken });
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : "Internal Server Error",
+    });
   }
 });
 
@@ -163,11 +183,9 @@ router.delete("/", requireToken(), async (req: Request, res: Response) => {
     });
     return res.status(204).send();
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        error: error instanceof Error ? error.message : "Internal Server Error",
-      });
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : "Internal Server Error",
+    });
   }
 });
 

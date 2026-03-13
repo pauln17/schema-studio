@@ -1,7 +1,11 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Modal from "@/components/modal";
+import { Schema } from "@/types/schema";
+import { useRouter } from "next/navigation";
 
 interface EditorNavbarProps {
+  schema: Schema | null;
   token: string;
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -11,6 +15,7 @@ interface EditorNavbarProps {
 }
 
 export default function EditorNavbar({
+  schema,
   token,
   activeTab,
   onTabChange,
@@ -18,10 +23,34 @@ export default function EditorNavbar({
   isPending,
   isSaved,
 }: EditorNavbarProps) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const shareUrl = `localhost:3000/editor/${token}`;
+
+  const generateLinkMutation = useMutation({
+    mutationFn: async () => {
+      if (!token) throw new Error("No token");
+      const res = await fetch("http://localhost:5001/schemas/token", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        throw new Error("Failed to generate new token");
+      }
+      const data = await res.json();
+      return data.token as string;
+    },
+    onSuccess: (newToken) => {
+      queryClient.removeQueries({ queryKey: ["schema", token] });
+      router.push(`/editor/${newToken}`);
+    },
+  });
 
   const handleCopy = async () => {
     try {
@@ -33,7 +62,9 @@ export default function EditorNavbar({
     }
   };
 
-  const handleGenerateLink = async () => {};
+  const handleGenerateLink = () => {
+    if (token) generateLinkMutation.mutate();
+  };
 
   return (
     <div className="flex items-center justify-between px-4 border-b border-white/[0.06] bg-black">
@@ -216,10 +247,13 @@ export default function EditorNavbar({
           <div className="pt-1 space-y-1.5">
             <button
               type="button"
-              className="w-full h-9 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-70 cursor-pointer transition-colors"
-              disabled
+              className="w-full h-9 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              disabled={!schema || generateLinkMutation.isPending}
+              onClick={handleGenerateLink}
             >
-              Generate new link
+              {generateLinkMutation.isPending
+                ? "Generating…"
+                : "Generate new link"}
             </button>
             <p className="text-[11px] text-neutral-500">
               Generating a new link will invalidate the previous one.
