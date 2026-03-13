@@ -12,6 +12,7 @@ interface EditorNavbarProps {
   saveSchema: () => void;
   isPending: boolean;
   isSaved: boolean;
+  renameSchema: (name: string) => void;
 }
 
 export default function EditorNavbar({
@@ -22,6 +23,7 @@ export default function EditorNavbar({
   saveSchema,
   isPending,
   isSaved,
+  renameSchema,
 }: EditorNavbarProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -81,9 +83,9 @@ export default function EditorNavbar({
   }, []);
 
   return (
-    <div className="flex items-center justify-between px-4 border-b border-white/[0.06] bg-black">
+    <div className="relative flex items-center justify-between px-4 border-b border-white/[0.06] bg-black">
       {/* Left: Tabs */}
-      <div className="flex items-center">
+      <div className="flex items-center min-w-0 shrink">
         {/* Editor */}
         <button
           onClick={() => onTabChange("editor")}
@@ -113,8 +115,21 @@ export default function EditorNavbar({
         </button>
       </div>
 
+      {/* Center: Schema Name*/}
+      {token && (
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <input
+            type="text"
+            value={schema?.name ?? ""}
+            onChange={(e) => renameSchema(e.target.value)}
+            placeholder="Untitled"
+            className="w-48 px-2 py-1 text-sm text-center font-medium text-neutral-300 bg-transparent border border-transparent rounded hover:border-white/20 focus:border-blue-500/60 focus:outline-none focus:ring-0 placeholder:text-neutral-500"
+          />
+        </div>
+      )}
+
       {/* Right: Actions */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
         {/* Undo */}
         <button
           className="p-3 rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.06] cursor-pointer transition-colors"

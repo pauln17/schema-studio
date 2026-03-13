@@ -86,28 +86,25 @@ export default function Editor() {
 
   const { mutate: saveSchema, isPending } = useMutation({
     mutationFn: async () => {
-      const cacheData = queryClient.getQueryData<Schema>(["schema", token]) ?? { definition: { enums: [], tables: [] } };
+      const cacheData = queryClient.getQueryData<Schema>(["schema", token]) ?? { name: "Untitled", definition: { enums: [], tables: [] } };
       if (token == undefined) {
         const res = await fetch("http://localhost:5001/schemas", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            name: "Schema",
-            definition: cacheData.definition as Schema["definition"],
-          }),
+          body: JSON.stringify(cacheData),
         });
         if (!res.ok) throw new Error("Failed to Create Schema");
         return res.json();
       } else {
-        const res = await fetch("http://localhost:5001/schemas/token", {
+        const res = await fetch("http://localhost:5001/schemas", {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(cacheData as Schema),
+          body: JSON.stringify(cacheData),
         });
         if (!res.ok) throw new Error("Failed to Save Schema");
         return res.json();
@@ -368,7 +365,8 @@ export default function Editor() {
     ),
   };
 
-  return token && (!router.isReady || isLoading) ? (
+  const isTokenLoading = token && (!router.isReady || isLoading || schema === null);
+  return isTokenLoading ? (
     <div className="flex w-screen h-screen items-center justify-center bg-black">
       <div className="flex flex-col items-center gap-4">
         <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-600 border-t-neutral-300" />
@@ -398,6 +396,7 @@ export default function Editor() {
           saveSchema={() => saveSchema()}
           isPending={isPending}
           isSaved={!hasUnsavedChanges}
+          renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
         />
         {tabContent[activeTab]}
       </div>
