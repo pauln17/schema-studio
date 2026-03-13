@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Modal from "@/components/modal";
 import { Schema } from "@/types/schema";
@@ -9,7 +9,7 @@ interface EditorNavbarProps {
   token: string;
   activeTab: string;
   onTabChange: (tab: string) => void;
-  saveSchema: () => void;
+  saveSchema: (variables?: unknown, options?: { onSuccess?: () => void }) => void;
   isPending: boolean;
   isSaved: boolean;
 }
@@ -63,8 +63,18 @@ export default function EditorNavbar({
   };
 
   const handleGenerateLink = () => {
-    if (token) generateLinkMutation.mutate();
+    if (token) {
+      generateLinkMutation.mutate();
+      return;
+    }
   };
+
+  useEffect(() => {
+    if (localStorage.getItem("OPEN_SHARE_AFTER_SAVE")) {
+      setIsShareOpen(true);
+      localStorage.removeItem("OPEN_SHARE_AFTER_SAVE");
+    }
+  }, []);
 
   return (
     <div className="flex items-center justify-between px-4 border-b border-white/[0.06] bg-black">
@@ -73,11 +83,10 @@ export default function EditorNavbar({
         {/* Editor */}
         <button
           onClick={() => onTabChange("editor")}
-          className={`relative px-5 py-3.5 text-base font-medium cursor-pointer transition-colors ${
-            activeTab === "editor"
-              ? "text-white"
-              : "text-neutral-500 hover:text-neutral-300"
-          }`}
+          className={`relative px-5 py-3.5 text-base font-medium cursor-pointer transition-colors ${activeTab === "editor"
+            ? "text-white"
+            : "text-neutral-500 hover:text-neutral-300"
+            }`}
         >
           Editor
           {activeTab === "editor" && (
@@ -88,11 +97,10 @@ export default function EditorNavbar({
         {/* SQL */}
         <button
           onClick={() => onTabChange("sql")}
-          className={`relative px-5 py-3.5 text-base font-medium cursor-pointer transition-colors ${
-            activeTab === "sql"
-              ? "text-white"
-              : "text-neutral-500 hover:text-neutral-300"
-          }`}
+          className={`relative px-5 py-3.5 text-base font-medium cursor-pointer transition-colors ${activeTab === "sql"
+            ? "text-white"
+            : "text-neutral-500 hover:text-neutral-300"
+            }`}
         >
           SQL
           {activeTab === "sql" && (
@@ -144,14 +152,13 @@ export default function EditorNavbar({
 
         <div className="w-px h-5 bg-white/[0.1] mx-2" />
 
-        {/* Save - shows status when saved, action when modified */}
+        {/* Save */}
         <button
-          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium min-w-[5rem] cursor-pointer transition-colors disabled:opacity-80 ${
-            isSaved && !isPending
-              ? "text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 cursor-default"
-              : "text-white bg-blue-600 hover:bg-blue-500"
-          }`}
-          title={isSaved ? "All changes saved" : "Save changes"}
+          className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium min-w-[5rem] cursor-pointer transition-colors disabled:opacity-80 ${isSaved && !isPending
+            ? "text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 cursor-default"
+            : "text-white bg-blue-600 hover:bg-blue-500"
+            }`}
+          title={isSaved ? "All Changes Saved" : "Save Changes"}
           onClick={isSaved ? undefined : saveSchema}
           disabled={isPending}
         >
@@ -198,7 +205,9 @@ export default function EditorNavbar({
         <button
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-neutral-300 border border-white/[0.1] hover:text-white hover:bg-white/[0.06] hover:border-white/[0.2] cursor-pointer transition-colors"
           title="Share"
-          onClick={() => setIsShareOpen(true)}
+          onClick={
+            token ? () => setIsShareOpen(true) : (() => { saveSchema(); localStorage.setItem("OPEN_SHARE_AFTER_SAVE", "true") })
+          }
         >
           <svg
             className="w-3.5 h-3.5"
@@ -253,7 +262,7 @@ export default function EditorNavbar({
             >
               {generateLinkMutation.isPending
                 ? "Generating…"
-                : "Generate new link"}
+                : "Generate New Link"}
             </button>
             <p className="text-[11px] text-neutral-500">
               Generating a new link will invalidate the previous one.

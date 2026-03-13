@@ -87,24 +87,39 @@ export default function Editor() {
 
   const { mutate: saveSchema, isPending } = useMutation({
     mutationFn: async () => {
-      if (token === undefined) throw new Error("No Token to Save Schema");
       const cacheData = queryClient.getQueryData<Schema>(["schema", token]);
-      if (cacheData === undefined) throw new Error("No Schema Data to Save");
-
-      const res = await fetch("http://localhost:5001/schemas", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cacheData),
-      });
-      if (!res.ok) throw new Error("Failed to Save Schema");
-      return res.json();
+      if (token == undefined) {
+        const res = await fetch("http://localhost:5001/schemas", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Schema",
+            definition: cacheData!.definition as Schema["definition"],
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to Create Schema");
+        return res.json();
+      } else {
+        const res = await fetch("http://localhost:5001/schemas", {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(cacheData as Schema),
+        });
+        if (!res.ok) throw new Error("Failed to Save Schema");
+        return res.json();
+      }
     },
-    onSuccess: () => {
-      const cacheData = queryClient.getQueryData<Schema>(["schema", token]);
-      if (cacheData) setLastSavedData(cacheData);
+    onSuccess: (data) => {
+      if (data.token) {
+        router.push(`/editor/${data.token}`);
+        queryClient.removeQueries({ queryKey: ["schema", undefined] });
+      }
+      setLastSavedData(data.schema);
     },
   });
 
@@ -138,10 +153,9 @@ export default function Editor() {
       !!schema &&
       !!lastSavedData &&
       JSON.stringify(schema.definition) !==
-        JSON.stringify(lastSavedData.definition),
+      JSON.stringify(lastSavedData.definition),
     [schema, lastSavedData],
   );
-
   // Warn before refresh/close when there are unsaved changes.
   // When the user chooses "Leave", mark that we should discard cached edits on reload.
   useEffect(() => {
@@ -196,11 +210,11 @@ export default function Editor() {
         tables.map((t) =>
           t.name === tableName
             ? {
-                ...t,
-                columns: t.columns.map((c) =>
-                  c.name === oldName ? { ...c, name: newName } : c,
-                ),
-              }
+              ...t,
+              columns: t.columns.map((c) =>
+                c.name === oldName ? { ...c, name: newName } : c,
+              ),
+            }
             : t,
         ),
       );
@@ -211,11 +225,11 @@ export default function Editor() {
           tables: tables.map((t) =>
             t.name === tableName
               ? {
-                  ...t,
-                  columns: t.columns.map((c) =>
-                    c.name === oldName ? { ...c, name: newName } : c,
-                  ),
-                }
+                ...t,
+                columns: t.columns.map((c) =>
+                  c.name === oldName ? { ...c, name: newName } : c,
+                ),
+              }
               : t,
           ),
         },
@@ -290,11 +304,11 @@ export default function Editor() {
       const updated = enums.map((e) =>
         e.name === enumName
           ? {
-              ...e,
-              options: (e.options ?? []).map((v) =>
-                v === oldName ? trimmed : v,
-              ),
-            }
+            ...e,
+            options: (e.options ?? []).map((v) =>
+              v === oldName ? trimmed : v,
+            ),
+          }
           : e,
       );
       setEnums(updated);
@@ -398,7 +412,7 @@ export default function Editor() {
           token={token ?? ""}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          saveSchema={saveSchema}
+          saveSchema={() => saveSchema()}
           isPending={isPending}
           isSaved={!hasUnsavedChanges}
         />

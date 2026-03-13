@@ -373,7 +373,7 @@ function TableSection({
             type="button"
             onClick={() => deleteTable(table.name)}
             className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
-            title="Delete table"
+            title="Delete Table"
           >
             <DeleteIcon />
           </button>
@@ -395,8 +395,8 @@ function TableSection({
                     className={`cursor-pointer shrink-0 transition-colors ${pkColumns.has(col.name) ? "text-amber-400" : "text-neutral-700 hover:text-amber-400/60"}`}
                     title={
                       pkColumns.has(col.name)
-                        ? "Remove from primary key"
-                        : "Add to primary key"
+                        ? "Remove From Primary Key"
+                        : "Add To Primary Key"
                     }
                   >
                     <svg
@@ -411,7 +411,7 @@ function TableSection({
                     onClick={() => toggleFk(col.name)}
                     className={`cursor-pointer shrink-0 transition-colors ${col.references ? "text-blue-400" : "text-neutral-700 hover:text-blue-400/60"}`}
                     title={
-                      col.references ? "Remove foreign key" : "Add foreign key"
+                      col.references ? "Remove Foreign Key" : "Add Foreign Key"
                     }
                   >
                     <svg
@@ -524,7 +524,7 @@ function TableSection({
                   type="button"
                   onClick={() => deleteColumn(col.name)}
                   className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
-                  title="Delete column"
+                  title="Delete Column"
                 >
                   <DeleteIcon />
                 </button>
@@ -645,7 +645,7 @@ function TableSection({
                 onClick={addIndex}
                 disabled={tableColumns.every((c) => indexedColumns.has(c.name))}
                 className="cursor-pointer p-1 rounded text-neutral-500 hover:text-violet-400 hover:bg-white/[0.06] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-neutral-500"
-                title="Add index"
+                title="Add Index"
               >
                 <svg
                   className="w-3.5 h-3.5"
@@ -706,7 +706,7 @@ function TableSection({
                       <button
                         onClick={() => deleteIndex(idx.name)}
                         className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
-                        title="Remove index"
+                        title="Remove Index"
                       >
                         <DeleteIcon />
                       </button>
@@ -862,7 +862,7 @@ function EnumSection({
             type="button"
             onClick={() => deleteEnum(enumItem.name)}
             className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
-            title="Delete enum"
+            title="Delete Enum"
           >
             <DeleteIcon />
           </button>
@@ -913,7 +913,7 @@ function EnumSection({
                 type="button"
                 onClick={() => removeOption(value)}
                 className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
-                title="Delete value"
+                title="Delete Value"
               >
                 <DeleteIcon />
               </button>
