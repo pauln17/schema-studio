@@ -86,7 +86,11 @@ export default function Editor() {
 
   const { mutate: saveSchema, isPending } = useMutation({
     mutationFn: async () => {
-      const cacheData = queryClient.getQueryData<Schema>(["schema", token]) ?? { name: "Untitled", definition: { enums: [], tables: [] } };
+      const raw = queryClient.getQueryData<Schema>(["schema", token]);
+      const cacheData = {
+        name: raw?.name ?? "Untitled",
+        definition: raw?.definition ?? { enums: [], tables: [] },
+      };
       if (token == undefined) {
         const res = await fetch("http://localhost:5001/schemas", {
           method: "POST",
@@ -112,8 +116,11 @@ export default function Editor() {
     },
     onSuccess: (data) => {
       if (data.token) {
+        queryClient.setQueryData(["schema", undefined], {
+          name: "Untitled",
+          definition: { tables: [], enums: [] },
+        });
         router.push(`/editor/${data.token}`);
-        queryClient.removeQueries({ queryKey: ["schema", undefined] });
       }
       setLastSavedData(data.schema);
     },
@@ -135,7 +142,9 @@ export default function Editor() {
 
   const hasUnsavedChanges = useMemo(
     () => {
-      return !!schema && !!lastSavedData && JSON.stringify(schema.definition) !== JSON.stringify(lastSavedData.definition);
+      if (!schema) return false;
+      if (!lastSavedData) return true; // Cache-Only Load: Unknown Server State, Assume Unsaved
+      return JSON.stringify(schema.definition) !== JSON.stringify(lastSavedData.definition);
     },
     [schema, lastSavedData],
   );
@@ -147,18 +156,6 @@ export default function Editor() {
       setEnums(schema.definition.enums ?? []);
     }
   }, [schema]);
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-      } else if (!token) {
-        localStorage.removeItem("REACT_QUERY_OFFLINE_CACHE");
-      };
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [hasUnsavedChanges, queryClient, token]);
 
   // Syncs Local State to React Flow
   useEffect(() => {

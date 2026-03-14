@@ -72,6 +72,7 @@ export default function EditorNavbar({
       );
       if (!ok) return;
     }
+    localStorage.setItem("OPEN_SHARE_AFTER_SAVE", "true")
     generateLinkMutation.mutate();
   };
 
