@@ -5,11 +5,28 @@ import type { Column, Index, Enum } from '@/types/schema';
 interface TableNodeData {
     label: string;
     columns: Column[];
-    indexes?: Index[];
-    enums?: Enum[];
+    indexes: Index[];
+    enums: Enum[];
+    referencedColumns: string[];
 }
 
-function ConstraintBadge({ text, color }: { text: string; color: string }) {
+interface TableNodeProps {
+    data: TableNodeData;
+}
+
+interface ColumnRowProps {
+    tableName: string;
+    col: Column;
+    enums: Enum[];
+    referencedColumns: string[];
+}
+
+interface ConstraintBadgeProps {
+    text: string;
+    color: string;
+}
+
+function ConstraintBadge({ text, color }: ConstraintBadgeProps) {
     return (
         <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${color}`}>
             {text}
@@ -17,10 +34,25 @@ function ConstraintBadge({ text, color }: { text: string; color: string }) {
     );
 }
 
-function ColumnRow({ col, enums }: { col: Column; enums?: Enum[] }) {
-    const displayType = enums?.some(e => e.name.toUpperCase() === col.type.toUpperCase()) ? col.type.toUpperCase() : col.type;
+function ColumnRow({ tableName, col, enums, referencedColumns }: ColumnRowProps) {
+    const displayType = enums.some(e => e.name.toUpperCase() === col.type.toUpperCase()) ? col.type.toUpperCase() : col.type;
+    const base = `${tableName}-${col.name}`;
+    const needsSource = !!col.references;
+    const needsTarget = referencedColumns.includes(col.name);
     return (
-        <div className={`flex items-center gap-3 px-4 py-2 hover:bg-neutral-800/50 transition-colors ${col.primaryKey ? 'shadow-[inset_2px_0_0_0_rgba(245,158,11,0.6)] bg-amber-500/[0.03]' : ''}`}>
+        <div className={`relative flex items-center gap-3 px-4 py-2 hover:bg-neutral-800/50 transition-colors ${col.primaryKey ? 'shadow-[inset_2px_0_0_0_rgba(245,158,11,0.6)] bg-amber-500/[0.03]' : ''}`}>
+            {needsSource && (
+                <>
+                    <Handle type="source" position={Position.Left} id={`${base}-source-left`} className="!w-2.5 !h-2.5 !opacity-0 pointer-events-none" />
+                    <Handle type="source" position={Position.Right} id={`${base}-source-right`} className="!w-2.5 !h-2.5 !opacity-0 pointer-events-none" />
+                </>
+            )}
+            {needsTarget && (
+                <>
+                    <Handle type="target" position={Position.Left} id={`${base}-target-left`} className="!w-2.5 !h-2.5 !opacity-0 pointer-events-none" />
+                    <Handle type="target" position={Position.Right} id={`${base}-target-right`} className="!w-2.5 !h-2.5 !opacity-0 pointer-events-none" />
+                </>
+            )}
             {/* Column Details */}
             <div className="flex items-center gap-2 min-w-0 w-28 shrink">
                 {col.primaryKey ? (
@@ -38,50 +70,47 @@ function ColumnRow({ col, enums }: { col: Column; enums?: Enum[] }) {
             </div>
 
             {/* Constraints */}
-            <div className="flex items-center gap-1 w-[7rem] justify-end shrink-0 min-h-[20px]">
+            <div className="flex items-center gap-1 shrink-0 min-h-[20px]">
                 {col.references && <ConstraintBadge text="FK" color="bg-blue-500/20 text-blue-400" />}
                 {col.unique && <ConstraintBadge text="UQ" color="bg-cyan-500/20 text-cyan-400" />}
                 {col.notNull && <ConstraintBadge text="NN" color="bg-red-500/20 text-red-400" />}
                 {col.default !== undefined && <ConstraintBadge text="DF" color="bg-emerald-500/20 text-emerald-400" />}
             </div>
 
-            {/* Column Type */}
-            <span className="text-[11px] text-neutral-500 font-mono w-24 shrink-0 text-right">{displayType}</span>
+            {/* Column Type - aligned far right */}
+            <span className="ml-auto text-[11px] text-neutral-500 font-mono shrink-0 text-right">{displayType}</span>
         </div>
     );
 }
 
-function TableNode({ data }: { data: TableNodeData }) {
-    const pkCols = data.columns.filter(c => c.primaryKey);
-    const otherCols = data.columns.filter(c => !c.primaryKey);
+function TableNode({ data }: TableNodeProps) {
+    const { label, columns, indexes, enums, referencedColumns } = data;
+    const pkCols = columns.filter(c => c.primaryKey);
+    const otherCols = columns.filter(c => !c.primaryKey);
 
     return (
         <div className="w-[320px] min-w-[320px] rounded-lg border border-neutral-700 bg-neutral-900 shadow-lg overflow-hidden">
-            {/* Handles */}
-            <Handle type="target" position={Position.Left} className="!w-2.5 !h-2.5 !bg-blue-500 !border-2 !border-blue-300" />
-            <Handle type="source" position={Position.Right} className="!w-2.5 !h-2.5 !bg-blue-500 !border-2 !border-blue-300" />
-
             {/* Table Name */}
             <div className="px-4 py-2.5 bg-neutral-800">
                 <div className="flex items-center gap-2">
                     <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
-                    <span className="font-semibold text-sm text-white tracking-wide">{data.label}</span>
+                    <span className="font-semibold text-sm text-white tracking-wide">{label}</span>
                 </div>
             </div>
 
             {/* Columns */}
             <div className="divide-y divide-neutral-800">
-                {pkCols.map(col => <ColumnRow key={col.name} col={col} enums={data.enums} />)}
-                {otherCols.map(col => <ColumnRow key={col.name} col={col} enums={data.enums} />)}
+                {pkCols.map(col => <ColumnRow key={col.name} tableName={label} col={col} enums={enums} referencedColumns={referencedColumns} />)}
+                {otherCols.map(col => <ColumnRow key={col.name} tableName={label} col={col} enums={enums} referencedColumns={referencedColumns} />)}
             </div>
 
             {/* Indexes */}
-            {(data.indexes?.length ?? 0) > 0 && (
+            {indexes.length > 0 && (
                 <div className="px-4 py-2.5 border-t border-neutral-800 bg-neutral-800/40">
                     <div className="space-y-2">
-                        {data.indexes!.map(idx => (
+                        {indexes.map(idx => (
                             <div
                                 key={idx.name}
                                 className="flex items-start gap-2 min-w-0"

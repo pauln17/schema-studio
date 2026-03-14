@@ -40,14 +40,18 @@ function EditorSidebar({
     updateTables(tables.map((t) => (t.name === updated.name ? updated : t)));
   };
 
-  const createTable = (name: string) => {
-    const newTable: Table = {
-      name,
-      position: { x: 0, y: 0 },
-      columns: [],
-      indexes: [],
-    };
-    updateTables([...tables, newTable]);
+  const createTable = () => {
+    const base = "table";
+    let name = base;
+    let n = 0;
+    while (tables.some((t) => t.name === name)) {
+      n += 1;
+      name = `${base}_${n}`;
+    }
+    updateTables([
+      ...tables,
+      { name, position: { x: 0, y: 0 }, columns: [], indexes: [] },
+    ]);
   };
 
   const updateEnum = (updated: Enum) => {
@@ -56,7 +60,14 @@ function EditorSidebar({
     );
   };
 
-  const createEnum = (name: string) => {
+  const createEnum = () => {
+    const base = "enum";
+    let name = base;
+    let n = 0;
+    while (enums.some((e) => e.name === name)) {
+      n += 1;
+      name = `${base}_${n}`;
+    }
     updateEnums([...enums, { name, options: [] }]);
   };
 
@@ -68,7 +79,7 @@ function EditorSidebar({
           Tables
         </h3>
         <button
-          onClick={() => createTable("New Table")}
+          onClick={createTable}
           className="cursor-pointer text-neutral-500 hover:text-blue-400 transition-colors p-1 rounded-md hover:bg-white/[0.06]"
         >
           <svg
@@ -111,7 +122,7 @@ function EditorSidebar({
               Enums
             </h3>
             <button
-              onClick={() => createEnum("New Enum")}
+              onClick={createEnum}
               className="cursor-pointer text-neutral-500 hover:text-emerald-400 transition-colors p-1 rounded-md hover:bg-white/[0.06]"
             >
               <svg

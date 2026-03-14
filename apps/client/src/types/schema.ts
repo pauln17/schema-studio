@@ -1,3 +1,18 @@
+export interface References {
+  referencedTable: string;
+  referencedColumn: string;
+}
+
+export interface TablePosition {
+  x: number;
+  y: number;
+}
+
+export interface SchemaDefinition {
+  enums: Enum[];
+  tables: Table[];
+}
+
 export interface Column {
   name: string;
   type: string;
@@ -5,7 +20,7 @@ export interface Column {
   notNull?: boolean;
   unique?: boolean;
   default?: string;
-  references?: { referencedTable: string; referencedColumn: string };
+  references?: References;
 }
 
 export interface Enum {
@@ -20,7 +35,7 @@ export interface Index {
 
 export interface Table {
   name: string;
-  position?: { x: number; y: number };
+  position?: TablePosition;
   columns: Column[];
   indexes: Index[];
 }
@@ -28,10 +43,7 @@ export interface Table {
 export interface Schema {
   id: string;
   name: string;
-  definition: {
-    enums: Enum[];
-    tables: Table[];
-  };
+  definition: SchemaDefinition;
   createdAt: Date;
   updatedAt: Date;
 }

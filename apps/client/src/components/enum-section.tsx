@@ -33,7 +33,7 @@ export function EnumSection({
   };
 
   const createOption = () => {
-    const base = "value";
+    const base = "option";
     let name = base;
     let n = 0;
     while (enumOptions.some((v) => v === name)) {

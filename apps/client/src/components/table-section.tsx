@@ -394,76 +394,78 @@ export function TableSection({
                     </button>
                   )}
                 </div>
-                <div className="relative inline-flex items-center shrink-0">
-                  {(() => {
-                    const isEnumType = enumNames.includes(
-                      col.type.toUpperCase(),
-                    );
-                    const normalizedType = isEnumType
-                      ? col.type.toUpperCase()
-                      : col.type;
-                    return (
-                      <select
-                        value={normalizedType}
-                        onChange={(e) => changeType(col.name, e.target.value)}
-                        className="appearance-none bg-transparent text-[11px] text-neutral-500 font-mono border-none outline-none cursor-pointer hover:text-neutral-300 transition-colors pr-3.5 pl-0"
-                        style={{ width: `${normalizedType.length + 3}ch` }}
-                      >
-                        <optgroup
-                          label="Data Types"
-                          className="bg-neutral-800 text-neutral-400"
+                <div className="ml-auto flex items-center gap-1 shrink-0">
+                  <div className="relative inline-flex items-center">
+                    {(() => {
+                      const isEnumType = enumNames.includes(
+                        col.type.toUpperCase(),
+                      );
+                      const normalizedType = isEnumType
+                        ? col.type.toUpperCase()
+                        : col.type;
+                      return (
+                        <select
+                          value={normalizedType}
+                          onChange={(e) => changeType(col.name, e.target.value)}
+                          className="appearance-none bg-transparent text-[11px] text-neutral-500 font-mono border-none outline-none cursor-pointer hover:text-neutral-300 transition-colors pr-3.5 pl-0 text-right"
+                          style={{ width: `${normalizedType.length + 3}ch` }}
                         >
-                          {SQL_TYPES.map((t) => (
-                            <option
-                              key={t}
-                              value={t}
-                              className="bg-neutral-800 text-neutral-300"
-                            >
-                              {t}
-                            </option>
-                          ))}
-                        </optgroup>
-                        {enumNames.length > 0 && (
                           <optgroup
-                            label="Enums"
+                            label="Data Types"
                             className="bg-neutral-800 text-neutral-400"
                           >
-                            {enumNames.map((e) => (
+                            {SQL_TYPES.map((t) => (
                               <option
-                                key={e}
-                                value={e}
+                                key={t}
+                                value={t}
                                 className="bg-neutral-800 text-neutral-300"
                               >
-                                {e}
+                                {t}
                               </option>
                             ))}
                           </optgroup>
-                        )}
-                      </select>
-                    );
-                  })()}
-                  <svg
-                    className="absolute right-0 w-3 h-3 pointer-events-none text-neutral-600"
-                    fill="none"
-                    viewBox="0 0 12 12"
-                    stroke="currentColor"
-                    strokeWidth={2}
+                          {enumNames.length > 0 && (
+                            <optgroup
+                              label="Enums"
+                              className="bg-neutral-800 text-neutral-400"
+                            >
+                              {enumNames.map((e) => (
+                                <option
+                                  key={e}
+                                  value={e}
+                                  className="bg-neutral-800 text-neutral-300"
+                                >
+                                  {e}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                        </select>
+                      );
+                    })()}
+                    <svg
+                      className="absolute right-0 w-3 h-3 pointer-events-none text-neutral-600"
+                      fill="none"
+                      viewBox="0 0 12 12"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 4.5l3 3 3-3"
+                      />
+                    </svg>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => deleteColumn(col.name)}
+                    className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
+                    title="Delete Column"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3 4.5l3 3 3-3"
-                    />
-                  </svg>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h12" /></svg>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => deleteColumn(col.name)}
-                  className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
-                  title="Delete Column"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h12" /></svg>
-                </button>
               </div>
 
               <div className="flex items-center justify-between gap-1 flex-nowrap w-full min-h-[20px]">

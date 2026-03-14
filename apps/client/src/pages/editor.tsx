@@ -20,6 +20,19 @@ import EditorNavbar from "@/components/editor-navbar";
 import TableNode from "@/components/table-node";
 import type { Table, Enum, Schema } from "@/types/schema";
 
+function getReferencedColumns(tableName: string, tables: Table[]): string[] {
+  const names: string[] = [];
+  for (const t of tables) {
+    if (t.name === tableName) continue;
+    for (const col of t.columns) {
+      if (col.references?.referencedTable === tableName) {
+        names.push(col.references.referencedColumn);
+      }
+    }
+  }
+  return [...new Set(names)];
+}
+
 function buildNodes(tables: Table[], enums: Enum[]): Node[] {
   return tables.map((t) => ({
     id: t.name,
@@ -27,27 +40,49 @@ function buildNodes(tables: Table[], enums: Enum[]): Node[] {
     position: t.position ?? { x: 0, y: 0 },
     data: {
       label: t.name,
-      columns: t.columns,
-      indexes: t.indexes,
+      columns: t.columns ?? [],
+      indexes: t.indexes ?? [],
       enums,
+      referencedColumns: getReferencedColumns(t.name, tables),
     },
   }));
 }
 
 function buildEdges(tables: Table[]): Edge[] {
+  const posByTable = Object.fromEntries(
+    tables.map((t) => [t.name, t.position ?? { x: 0, y: 0 }])
+  );
+  const tablesByNames = Object.fromEntries(tables.map((t) => [t.name, t]));
   const edges: Edge[] = [];
   for (const table of tables) {
     for (const col of table.columns) {
-      if (col.references) {
-        edges.push({
-          // List Table Name, Foreign Table Name, Foreign Column Name
-          id: `${table.name}-${col.references.referencedTable}-${col.name}`,
-          source: table.name,
-          target: col.references.referencedTable,
-          type: "smoothstep",
-          style: { stroke: "#525252" },
-        });
-      }
+      if (!col.references) continue;
+      const srcTable = table;
+      const tgtTable = tablesByNames[col.references.referencedTable];
+      const tgtCol = col.references.referencedColumn;
+
+      const targetHasColumn = tgtTable?.columns?.some((c) => c.name === tgtCol) ?? false;
+      if (!targetHasColumn) continue;
+
+      const srcPos = posByTable[srcTable.name];
+      const tgtPos = posByTable[tgtTable.name];
+      const targetIsRight = tgtPos.x > srcPos.x;
+      const sourceHandle = targetIsRight
+        ? `${srcTable.name}-${col.name}-source-right`
+        : `${srcTable.name}-${col.name}-source-left`;
+      const targetHandle = targetIsRight
+        ? `${tgtTable.name}-${tgtCol}-target-left`
+        : `${tgtTable.name}-${tgtCol}-target-right`;
+
+      edges.push({
+        id: `${srcTable.name}-${tgtTable.name}-${col.name}`,
+        source: srcTable.name,
+        sourceHandle,
+        target: tgtTable.name,
+        targetHandle,
+        type: "smoothstep",
+        style: { stroke: "#FFFFFF" },
+      });
     }
   }
   return edges;
@@ -171,7 +206,7 @@ export default function Editor() {
       updateQueryCache({
         ...schema,
         definition: {
-          enums,
+          ...schema?.definition,
           tables: tables.map((t) =>
             t.name === oldName ? { ...t, name: newName } : t,
           ),
@@ -314,7 +349,7 @@ export default function Editor() {
       const tempData = {
         ...schema,
         definition: {
-          enums,
+          ...schema?.definition,
           tables: tables.map((t) =>
             t.name === node.id ? { ...t, position: node.position } : t,
           ),
@@ -340,6 +375,7 @@ export default function Editor() {
   const tabContent: Record<string, JSX.Element> = {
     editor: (
       <ReactFlow
+        className="[&_.react-flow__node]:!cursor-default [&_.react-flow__node]:!pointer-events-auto"
         nodes={flowNodes}
         edges={flowEdges}
         nodeTypes={nodeTypes}
