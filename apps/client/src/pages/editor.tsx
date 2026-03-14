@@ -206,7 +206,7 @@ export default function Editor() {
       updateQueryCache({
         ...schema,
         definition: {
-          ...schema?.definition,
+          enums,
           tables: tables.map((t) =>
             t.name === oldName ? { ...t, name: newName } : t,
           ),
@@ -255,10 +255,7 @@ export default function Editor() {
       setTables(updated);
       updateQueryCache({
         ...schema,
-        definition: {
-          ...schema?.definition,
-          tables: updated,
-        },
+        definition: { enums, tables: updated },
       } as Schema);
     },
     [enums, schema, updateQueryCache],
@@ -276,13 +273,10 @@ export default function Editor() {
       setEnums(updated);
       updateQueryCache({
         ...schema,
-        definition: {
-          ...schema?.definition,
-          enums: updated,
-        },
+        definition: { tables, enums: updated },
       } as Schema);
     },
-    [schema, updateQueryCache],
+    [schema, tables, updateQueryCache],
   );
 
   const deleteEnum = useCallback(
@@ -300,13 +294,10 @@ export default function Editor() {
       setEnums(updated);
       updateQueryCache({
         ...schema,
-        definition: {
-          ...schema?.definition,
-          enums: updated,
-        },
+        definition: { tables, enums: updated },
       } as Schema);
     },
-    [enums, schema, updateQueryCache],
+    [enums, schema, tables, updateQueryCache],
   );
 
   const renameEnumOption = useCallback(
@@ -326,13 +317,10 @@ export default function Editor() {
       setEnums(updated);
       updateQueryCache({
         ...schema,
-        definition: {
-          ...schema?.definition,
-          enums: updated,
-        },
+        definition: { tables, enums: updated },
       } as Schema);
     },
-    [enums, schema, updateQueryCache],
+    [enums, schema, tables, updateQueryCache],
   );
 
   // Custom Node Types for React Flow -> React Flow Matches Node Types to Component Names to Generate Nodes
@@ -349,7 +337,7 @@ export default function Editor() {
       const tempData = {
         ...schema,
         definition: {
-          ...schema?.definition,
+          enums,
           tables: tables.map((t) =>
             t.name === node.id ? { ...t, position: node.position } : t,
           ),
