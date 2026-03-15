@@ -41,9 +41,6 @@ export interface Table {
 }
 
 export interface Schema {
-  id: string;
   name: string;
   definition: SchemaDefinition;
-  createdAt: Date;
-  updatedAt: Date;
 }
