@@ -50,7 +50,7 @@ function EditorSidebar({
     }
     updateTables([
       ...tables,
-      { name, position: { x: 0, y: 0 }, columns: [], indexes: [] },
+      { name, position: { x: 0, y: 0 }, columns: [], indexes: [], keys: [], checks: [] },
     ]);
   };
 
@@ -72,7 +72,7 @@ function EditorSidebar({
   };
 
   return (
-    <div className="w-80 shrink-0 border-r border-white/[0.06] bg-black flex flex-col overflow-hidden">
+    <div className="w-96 shrink-0 border-r border-white/[0.06] bg-black flex flex-col overflow-hidden">
       {/* Sidebar Header*/}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <h3 className="text-[11px] font-semibold text-neutral-400 uppercase tracking-widest">

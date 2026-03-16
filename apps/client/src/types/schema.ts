@@ -38,6 +38,8 @@ export interface Table {
   position?: TablePosition;
   columns: Column[];
   indexes: Index[];
+  keys: string[];
+  checks: string[];
 }
 
 export interface Schema {

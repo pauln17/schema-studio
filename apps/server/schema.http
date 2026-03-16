@@ -1,5 +1,5 @@
 @baseUrl = http://localhost:5001
-@token = cd1f81a63466809e1b7b25b0e7bd31a6a1850f715ea30ecfca4bb988db7fa67a
+@token = 3c42b8942dd2123750b666b7568f4ac92e78e822bac0a9d19070e7d42bd0d28a
 
 
 ### Get Schema
@@ -25,7 +25,9 @@ Content-Type: application/json
           { "name": "birth_date", "type": "DATE" },
           { "name": "created_at", "type": "TIMESTAMP", "default": "now()", "notNull": true }
         ],
-        "indexes": []
+        "indexes": [],
+        "keys": [["id"]],
+        "checks": []
       },
       {
         "name": "posts",
@@ -35,7 +37,7 @@ Content-Type: application/json
           { "name": "user_id", "type": "UUID", "notNull": true, "references": { "referencedTable": "users", "referencedColumn": "id" } },
           { "name": "title", "type": "VARCHAR", "length": 500, "notNull": true },
           { "name": "body", "type": "VARCHAR", "length": 10000 },
-          { "name": "status", "type": "post_status", "default": "draft", "check": "status IN ('draft', 'published', 'archived')" },
+          { "name": "status", "type": "post_status", "default": "draft" },
           { "name": "view_count", "type": "BIGINT", "default": 0, "notNull": true },
           { "name": "published_at", "type": "TIMESTAMP" },
           { "name": "created_at", "type": "TIMESTAMP", "default": "now()", "notNull": true }
@@ -44,7 +46,9 @@ Content-Type: application/json
           { "indexedColumn": "user_id", "name": "idx_posts_user_id" },
           { "indexedColumn": "status", "name": "idx_posts_status" },
           { "indexedColumn": "published_at", "name": "idx_posts_published_at" }
-        ]
+        ],
+        "keys": [["id"]],
+        "checks": ["status IN ('draft', 'published', 'archived')", "view_count >= 0", "published_at IS NULL OR published_at >= created_at"]
       },
       {
         "name": "comments",
@@ -59,7 +63,9 @@ Content-Type: application/json
         "indexes": [
           { "indexedColumn": "post_id", "name": "idx_comments_post_id" },
           { "indexedColumn": "user_id", "name": "idx_comments_user_id" }
-        ]
+        ],
+        "keys": [["id"]],
+        "checks": []
       },
       {
         "name": "tags",
@@ -68,7 +74,9 @@ Content-Type: application/json
           { "name": "id", "type": "UUID", "primaryKey": true, "default": "gen_random_uuid()" },
           { "name": "name", "type": "VARCHAR", "length": 100, "unique": true, "notNull": true }
         ],
-        "indexes": []
+        "indexes": [],
+        "keys": [["id"]],
+        "checks": []
       },
       {
         "name": "post_tags",
@@ -77,7 +85,9 @@ Content-Type: application/json
           { "name": "post_id", "type": "UUID", "references": { "referencedTable": "posts", "referencedColumn": "id" }, "primaryKey": true },
           { "name": "tag_id", "type": "UUID", "references": { "referencedTable": "tags", "referencedColumn": "id" }, "primaryKey": true }
         ],
-        "indexes": []
+        "indexes": [],
+        "keys": [["post_id", "tag_id"]],
+        "checks": []
       }
     ],
     "enums": [

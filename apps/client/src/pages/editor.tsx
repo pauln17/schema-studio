@@ -81,6 +81,7 @@ function buildEdges(tables: Table[]): Edge[] {
         target: tgtTable.name,
         targetHandle,
         type: "smoothstep",
+        animated: true,
         style: { stroke: "#FFFFFF" },
       });
     }

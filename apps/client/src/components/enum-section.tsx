@@ -131,7 +131,7 @@ export function EnumSection({
           <button
             type="button"
             onClick={() => deleteEnum(enumItem.name)}
-            className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
+            className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
             title="Delete Enum"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h12" /></svg>
@@ -182,7 +182,7 @@ export function EnumSection({
               <button
                 type="button"
                 onClick={() => removeOption(value)}
-                className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0"
+                className="p-1 text-neutral-500 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
                 title="Delete Value"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h12" /></svg>
