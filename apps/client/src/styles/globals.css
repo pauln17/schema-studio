@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
+  --background: #070707;
   --foreground: #ededed;
 }
 
@@ -20,24 +20,13 @@ body {
   display: none;
 }
 
-/* Hide React Flow handles (no canvas connections; FK set in sidebar) */
 .react-flow__handle {
   visibility: hidden !important;
   pointer-events: none !important;
   cursor: default !important;
 }
 
-/* Edges are display-only; no click/interaction */
 .react-flow__edge {
   pointer-events: none !important;
   cursor: default !important;
-}
-
-/* Remove separator line/outline when focused or active */
-[data-separator]:focus,
-[data-separator]:focus-visible,
-[data-separator="active"] {
-  outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
 }

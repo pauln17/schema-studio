@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, type JSX } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import {
   ReactFlow,
@@ -6,12 +6,10 @@ import {
   Controls,
   applyNodeChanges,
   applyEdgeChanges,
-  addEdge,
   type Node,
   type Edge,
   type NodeChange,
   type EdgeChange,
-  type Connection,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -20,7 +18,7 @@ import EditorNavbar from "@/components/editor-navbar";
 import TableNode from "@/components/table-node";
 import type { Table, Enum, Schema } from "@/types/schema";
 import { schemaToSql } from "@/lib/schema-to-sql";
-import { Group, Panel, Separator } from "react-resizable-panels";
+import { Group, Panel } from "react-resizable-panels";
 
 function getReferencedColumns(tableName: string, tables: Table[]): string[] {
   const names: string[] = [];
@@ -129,7 +127,7 @@ export default function Editor() {
         name: raw?.name ?? "Untitled",
         definition: raw?.definition ?? { enums: [], tables: [] },
       };
-      if (token == undefined) {
+      if (token === undefined) {
         const res = await fetch("http://localhost:5001/schemas", {
           method: "POST",
           headers: {
@@ -172,7 +170,7 @@ export default function Editor() {
   );
 
   const [lastSavedData, setLastSavedData] = useState<Schema | null>(null);
-  const [activeTab, setActiveTab] = useState("editor");
+  const [activeSidebarTab, setActiveSidebarTab] = useState<"schema" | "sql">("schema");
   const [tables, setTables] = useState<Table[]>([]);
   const [enums, setEnums] = useState<Enum[]>([]);
   const [flowNodes, setFlowNodes] = useState<Node[]>(() => buildNodes(tables, enums));
@@ -300,7 +298,7 @@ export default function Editor() {
         definition: { tables, enums: updated },
       } as Schema);
     },
-    [enums, schema, tables, updateQueryCache],
+    [enums, schema, updateQueryCache],
   );
 
   const renameEnumOption = useCallback(
@@ -323,10 +321,10 @@ export default function Editor() {
         definition: { tables, enums: updated },
       } as Schema);
     },
-    [enums, schema, tables, updateQueryCache],
+    [enums, schema, updateQueryCache],
   );
 
-  // Custom Node Types for React Flow -> React Flow Matches Node Types to Component Names to Generate Nodes
+  // Custom Node Types for React Flow
   const nodeTypes = useMemo(() => ({ table: TableNode }), []);
 
   const onNodesChange = useCallback(
@@ -357,37 +355,15 @@ export default function Editor() {
       setFlowEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
     [],
   );
-  const onConnect = useCallback(
-    (params: Connection) =>
-      setFlowEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
-    [],
-  );
 
-  const tabContent: Record<string, JSX.Element> = {
-    editor: (
-      <ReactFlow
-        className="[&_.react-flow__node]:!cursor-default [&_.react-flow__node]:!pointer-events-auto"
-        nodes={flowNodes}
-        edges={flowEdges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodeDragStop={onNodeDragStop}
-        onConnect={onConnect}
-        colorMode="dark"
-        proOptions={{ hideAttribution: true }}
-        fitView
-      >
-        <Background color="#666666" gap={16} size={1} className="!bg-[#0d0d0d]" />
-        <Controls className="!mr-5" position="top-right" />
-      </ReactFlow>
-    ),
-    sql: (
-      <div className="flex-1 flex items-center justify-center bg-black text-neutral-500">
-        <p className="text-sm">SQL View Coming Soon</p>
-      </div>
-    ),
-  };
+  const sqlContent = useMemo(
+    () =>
+      schemaToSql(
+        { name: schema?.name ?? "", definition: { tables, enums } } as Schema,
+        "postgres"
+      ),
+    [schema?.name, tables, enums],
+  );
 
   const isTokenLoading = token && (!router.isReady || isLoading || schema === null);
   return isTokenLoading ? (
@@ -402,6 +378,9 @@ export default function Editor() {
       <Group orientation="horizontal">
         <Panel defaultSize="18" minSize="18" maxSize="30">
           <EditorSidebar
+            activeTab={activeSidebarTab}
+            onTabChange={setActiveSidebarTab}
+            sqlContent={sqlContent}
             tables={tables}
             enums={enums}
             updateTables={updateTables}
@@ -412,44 +391,38 @@ export default function Editor() {
             deleteEnum={deleteEnum}
             renameEnum={renameEnum}
             renameEnumOption={renameEnumOption}
-            onExportSql={() => {
-              const sql = schemaToSql(
-                { name: schema?.name ?? "", definition: { tables, enums } } as Schema,
-                "postgres"
-              );
-              void navigator.clipboard.writeText(sql);
-            }}
-            onImportSql={() => setActiveTab("sql")}
           />
         </Panel>
-        <Separator className="!w-2 !min-w-2 !bg-[#070707] !cursor-col-resize !outline-none !ring-0 !border-0 focus:!outline-none focus:!ring-0 focus-visible:!outline-none focus-visible:!ring-0 [&[data-separator=active]]:!outline-none [&[data-separator=active]]:!ring-0 [&[data-separator=active]]:!border-0" />
         <Panel defaultSize="75" minSize="50">
           <div className="flex flex-col h-full">
             <EditorNavbar
               schema={schema ?? null}
               token={token ?? ""}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
               saveSchema={() => saveSchema()}
               isPending={isPending}
               isSaved={!hasUnsavedChanges}
               renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
-              onExportSql={() => {
-                const sql = schemaToSql(
-                  { name: schema?.name ?? "", definition: { tables, enums } } as Schema,
-                  "postgres"
-                );
-                void navigator.clipboard.writeText(sql);
-              }}
-              onImportSql={() => setActiveTab("sql")}
             />
             <div className="flex-1 overflow-hidden">
-              {tabContent[activeTab]}
+              <ReactFlow
+                className="[&_.react-flow__node]:!cursor-default [&_.react-flow__node]:!pointer-events-auto"
+                nodes={flowNodes}
+                edges={flowEdges}
+                nodeTypes={nodeTypes}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onNodeDragStop={onNodeDragStop}
+                colorMode="dark"
+                proOptions={{ hideAttribution: true }}
+                fitView
+              >
+                <Background gap={16} size={1} className="!bg-[#0a0a0a]" />
+                <Controls className="!mr-5" position="top-right" />
+              </ReactFlow>
             </div>
           </div>
         </Panel>
       </Group>
-
     </div>
   );
 }
