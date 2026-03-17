@@ -22,6 +22,8 @@ interface EditorSidebarProps {
     oldName: string,
     newName: string,
   ) => void;
+  onExportSql?: () => void;
+  onImportSql?: () => void;
 }
 
 function EditorSidebar({
@@ -35,6 +37,8 @@ function EditorSidebar({
   deleteEnum,
   renameEnum,
   renameEnumOption,
+  onExportSql,
+  onImportSql,
 }: EditorSidebarProps) {
   const updateTable = (updated: Table) => {
     updateTables(tables.map((t) => (t.name === updated.name ? updated : t)));
@@ -72,7 +76,7 @@ function EditorSidebar({
   };
 
   return (
-    <div className="w-96 shrink-0 border-r border-white/[0.06] bg-black flex flex-col overflow-hidden">
+    <div className="w-full min-w-0 h-full bg-[#070707] flex flex-col overflow-hidden">
       {/* Sidebar Header*/}
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <h3 className="text-[11px] font-semibold text-neutral-400 uppercase tracking-widest">
@@ -99,7 +103,7 @@ function EditorSidebar({
       </div>
 
       {/*Sidebar Content*/}
-      <div className="flex-1 overflow-y-auto px-4 ">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
         <div className="space-y-2">
           {/* Requires Enums For Type Display */}
           {tables.map((table) => (
@@ -156,40 +160,38 @@ function EditorSidebar({
         </div>
       </div>
 
-      {/* Export/Import SQL Buttons*/}
-      <div className="p-3 border-t border-white/[0.06] space-y-2">
-        <button className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/[0.06] text-sm text-neutral-300 hover:bg-white/[0.1] hover:text-white transition-colors">
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-            />
-          </svg>
-          Export SQL
-        </button>
-        <button className="cursor-pointer w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/[0.06] text-sm text-neutral-300 hover:bg-white/[0.1] hover:text-white transition-colors">
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-            />
-          </svg>
-          Import SQL
-        </button>
+      {/* Footer */}
+      <div className="shrink-0 px-4 py-3 border-t border-white/[0.06] space-y-2">
+        <p className="text-[10px] text-neutral-600 text-center">
+          {tables.length} Table{tables.length !== 1 ? "s" : ""} · {enums.length} Enum{enums.length !== 1 ? "s" : ""}
+          {tables.length > 0 && ` · ${tables.reduce((n, t) => n + (t.columns?.length ?? 0), 0)} Columns`}
+        </p>
+        <div className="flex items-center gap-2">
+          {onExportSql && (
+            <button
+              type="button"
+              onClick={onExportSql}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/[0.06] text-xs text-neutral-300 hover:bg-white/[0.1] hover:text-white transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 640 640" fill="currentColor">
+                <path d="M352 96c0-17.7-14.3-32-32-32s-32 14.3-32 32v210.7l-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L352 306.7zM160 384c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64v-32c0-35.3-28.7-64-64-64h-46.9l-56.6 56.6c-31.2 31.2-81.9 31.2-113.1 0L206.9 384zm304 56c13.3 0 24 10.7 24 24s-10.7 24-24 24s-24-10.7-24-24s10.7-24 24-24" />
+              </svg>
+              Export
+            </button>
+          )}
+          {onImportSql && (
+            <button
+              type="button"
+              onClick={onImportSql}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/[0.06] text-xs text-neutral-300 hover:bg-white/[0.1] hover:text-white transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 640 640" fill="currentColor">
+                <path d="M352 173.3V384c0 17.7-14.3 32-32 32s-32-14.3-32-32V173.3l-41.4 41.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l96-96c12.5-12.5 32.8-12.5 45.3 0l96 96c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0zM320 464c44.2 0 80-35.8 80-80h80c35.3 0 64 28.7 64 64v32c0 35.3-28.7 64-64 64H160c-35.3 0-64-28.7-64-64v-32c0-35.3 28.7-64 64-64h80c0 44.2 35.8 80 80 80m144 24c13.3 0 24-10.7 24-24s-10.7-24-24-24s-24 10.7-24 24s10.7 24 24 24" />
+              </svg>
+              Import
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

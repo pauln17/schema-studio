@@ -19,6 +19,8 @@ import EditorSidebar from "@/components/editor-sidebar";
 import EditorNavbar from "@/components/editor-navbar";
 import TableNode from "@/components/table-node";
 import type { Table, Enum, Schema } from "@/types/schema";
+import { schemaToSql } from "@/lib/schema-to-sql";
+import { Group, Panel, Separator } from "react-resizable-panels";
 
 function getReferencedColumns(tableName: string, tables: Table[]): string[] {
   const names: string[] = [];
@@ -376,7 +378,7 @@ export default function Editor() {
         proOptions={{ hideAttribution: true }}
         fitView
       >
-        <Background color="#555555" className="!bg-black" />
+        <Background color="#666666" gap={16} size={1} className="!bg-[#0d0d0d]" />
         <Controls className="!mr-5" position="top-right" />
       </ReactFlow>
     ),
@@ -397,31 +399,57 @@ export default function Editor() {
     </div>
   ) : (
     <div className="flex w-screen h-screen overflow-hidden">
-      <EditorSidebar
-        tables={tables}
-        enums={enums}
-        updateTables={updateTables}
-        deleteTable={deleteTable}
-        renameTable={renameTable}
-        renameColumn={renameColumn}
-        updateEnums={updateEnums}
-        deleteEnum={deleteEnum}
-        renameEnum={renameEnum}
-        renameEnumOption={renameEnumOption}
-      />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <EditorNavbar
-          schema={schema ?? null}
-          token={token ?? ""}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          saveSchema={() => saveSchema()}
-          isPending={isPending}
-          isSaved={!hasUnsavedChanges}
-          renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
-        />
-        {tabContent[activeTab]}
-      </div>
+      <Group orientation="horizontal">
+        <Panel defaultSize="18" minSize="18" maxSize="30">
+          <EditorSidebar
+            tables={tables}
+            enums={enums}
+            updateTables={updateTables}
+            deleteTable={deleteTable}
+            renameTable={renameTable}
+            renameColumn={renameColumn}
+            updateEnums={updateEnums}
+            deleteEnum={deleteEnum}
+            renameEnum={renameEnum}
+            renameEnumOption={renameEnumOption}
+            onExportSql={() => {
+              const sql = schemaToSql(
+                { name: schema?.name ?? "", definition: { tables, enums } } as Schema,
+                "postgres"
+              );
+              void navigator.clipboard.writeText(sql);
+            }}
+            onImportSql={() => setActiveTab("sql")}
+          />
+        </Panel>
+        <Separator className="!w-2 !min-w-2 !bg-[#070707] !cursor-col-resize !outline-none !ring-0 !border-0 focus:!outline-none focus:!ring-0 focus-visible:!outline-none focus-visible:!ring-0 [&[data-separator=active]]:!outline-none [&[data-separator=active]]:!ring-0 [&[data-separator=active]]:!border-0" />
+        <Panel defaultSize="75" minSize="50">
+          <div className="flex flex-col h-full">
+            <EditorNavbar
+              schema={schema ?? null}
+              token={token ?? ""}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              saveSchema={() => saveSchema()}
+              isPending={isPending}
+              isSaved={!hasUnsavedChanges}
+              renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
+              onExportSql={() => {
+                const sql = schemaToSql(
+                  { name: schema?.name ?? "", definition: { tables, enums } } as Schema,
+                  "postgres"
+                );
+                void navigator.clipboard.writeText(sql);
+              }}
+              onImportSql={() => setActiveTab("sql")}
+            />
+            <div className="flex-1 overflow-hidden">
+              {tabContent[activeTab]}
+            </div>
+          </div>
+        </Panel>
+      </Group>
+
     </div>
   );
 }

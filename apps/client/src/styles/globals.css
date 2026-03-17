@@ -32,3 +32,12 @@ body {
   pointer-events: none !important;
   cursor: default !important;
 }
+
+/* Remove separator line/outline when focused or active */
+[data-separator]:focus,
+[data-separator]:focus-visible,
+[data-separator="active"] {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}

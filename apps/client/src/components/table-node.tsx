@@ -40,7 +40,7 @@ function ColumnRow({ tableName, col, enums, referencedColumns }: ColumnRowProps)
     const needsSource = !!col.references;
     const needsTarget = referencedColumns.includes(col.name);
     return (
-        <div className={`relative flex items-center gap-3 px-4 py-2 hover:bg-neutral-800/50 transition-colors ${col.primaryKey ? 'shadow-[inset_2px_0_0_0_rgba(245,158,11,0.6)] bg-amber-500/[0.03]' : ''}`}>
+        <div className={`relative flex items-center gap-3 px-4 py-2 hover:bg-white/[0.04] transition-colors ${col.primaryKey ? 'border-l-2 border-l-yellow-400/60 bg-yellow-400/[0.08]' : ''}`}>
             {needsSource && (
                 <>
                     <Handle type="source" position={Position.Left} id={`${base}-source-left`} className="!w-2.5 !h-2.5 !opacity-0 pointer-events-none" />
@@ -56,7 +56,7 @@ function ColumnRow({ tableName, col, enums, referencedColumns }: ColumnRowProps)
             {/* Column Details */}
             <div className="flex items-center gap-2 min-w-0 w-28 shrink">
                 {col.primaryKey ? (
-                    <svg className="w-3.5 h-3.5 text-amber-400 shrink-0" fill="currentColor" viewBox="0 0 16 16">
+                    <svg className="w-3.5 h-3.5 text-yellow-400 shrink-0" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M0 8a4 4 0 0 1 7.465-2H14a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-1v1a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1V9H7.465A4 4 0 0 1 0 8Zm4-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" />
                     </svg>
                 ) : col.references ? (
@@ -66,7 +66,7 @@ function ColumnRow({ tableName, col, enums, referencedColumns }: ColumnRowProps)
                 ) : (
                     <span className="w-3.5 shrink-0" />
                 )}
-                <span className="text-xs text-neutral-200 truncate">{col.name}</span>
+                <span className="text-xs text-white/90 truncate">{col.name}</span>
             </div>
 
             {/* Constraints */}
@@ -78,7 +78,7 @@ function ColumnRow({ tableName, col, enums, referencedColumns }: ColumnRowProps)
             </div>
 
             {/* Column Type - aligned far right */}
-            <span className="ml-auto text-[11px] text-neutral-500 font-mono shrink-0 text-right">{displayType}</span>
+            <span className="ml-auto text-[11px] text-white/50 font-mono shrink-0 text-right">{displayType}</span>
         </div>
     );
 }
@@ -89,9 +89,9 @@ function TableNode({ data }: TableNodeProps) {
     const otherCols = columns.filter(c => !c.primaryKey);
 
     return (
-        <div className="w-[320px] min-w-[320px] rounded-lg border border-neutral-700 bg-neutral-900 shadow-lg overflow-hidden">
+        <div className="w-[320px] min-w-[320px] rounded-lg border border-white/[0.12] bg-[#050505] overflow-hidden">
             {/* Table Name */}
-            <div className="px-4 py-2.5 bg-neutral-800">
+            <div className="px-4 py-2.5 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2">
                     <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -101,14 +101,14 @@ function TableNode({ data }: TableNodeProps) {
             </div>
 
             {/* Columns */}
-            <div className="divide-y divide-neutral-800">
+            <div className="divide-y divide-white/[0.06]">
                 {pkCols.map(col => <ColumnRow key={col.name} tableName={label} col={col} enums={enums} referencedColumns={referencedColumns} />)}
                 {otherCols.map(col => <ColumnRow key={col.name} tableName={label} col={col} enums={enums} referencedColumns={referencedColumns} />)}
             </div>
 
             {/* Indexes */}
             {indexes.length > 0 && (
-                <div className="px-4 py-2.5 border-t border-neutral-800 bg-neutral-800/40">
+                <div className="px-4 py-2.5 border-t border-white/[0.06] bg-white/[0.02]">
                     <div className="space-y-2">
                         {indexes.map(idx => (
                             <div
@@ -116,10 +116,10 @@ function TableNode({ data }: TableNodeProps) {
                                 className="flex items-start gap-2 min-w-0"
                                 title={`${idx.name} (${idx.indexedColumn})`}
                             >
-                                <span className="w-1.5 h-1.5 mt-1.5 rounded-full bg-violet-500/60 shrink-0" />
+                                <span className="w-1.5 h-1.5 mt-1.5 rounded-full bg-white/40 shrink-0" />
                                 <div className="min-w-0 flex-1">
-                                    <span className="text-[10px] font-mono text-neutral-400 block truncate">{idx.name}</span>
-                                    <span className="text-[10px] font-mono text-neutral-600 block truncate">({idx.indexedColumn})</span>
+                                    <span className="text-[10px] font-mono text-white/60 block truncate">{idx.name}</span>
+                                    <span className="text-[10px] font-mono text-white/40 block truncate">({idx.indexedColumn})</span>
                                 </div>
                             </div>
                         ))}
