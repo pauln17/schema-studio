@@ -1,15 +1,16 @@
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import MonacoEditor from "@monaco-editor/react";
-import type { Table, Enum } from "@/types/schema";
-import { TableSection } from "./table-section";
+import type { Enum, Schema, Table } from "@/types/schema";
 import { EnumSection } from "./enum-section";
+import { TableSection } from "./table-section";
 
 function SidebarFooter({ tables, enums }: { tables: Table[]; enums: Enum[] }) {
   const columnCount = tables.reduce((n, t) => n + (t.columns?.length ?? 0), 0);
   return (
     <div className="shrink-0 px-4 py-3 border-t border-white/[0.06] space-y-2">
       <p className="text-[10px] text-neutral-600 text-center">
-        {tables.length} Table{tables.length !== 1 ? "s" : ""} · {enums.length} Enum{enums.length !== 1 ? "s" : ""}
+        {tables.length} Table{tables.length !== 1 ? "s" : ""}
+        · {enums.length} Enum{enums.length !== 1 ? "s" : ""}
         {tables.length > 0 && ` · ${columnCount} Columns`}
       </p>
       <div className="flex items-center gap-2">
@@ -37,47 +38,139 @@ function SidebarFooter({ tables, enums }: { tables: Table[]; enums: Enum[] }) {
 }
 
 interface EditorSidebarProps {
-  activeTab: "schema" | "sql";
+  activeSidebarTab: "schema" | "sql";
   onTabChange: (tab: "schema" | "sql") => void;
   sqlContent: string;
+  schema: Schema | null;
   tables: Table[];
   enums: Enum[];
-  updateTables: (tables: Table[]) => void;
-  deleteTable: (tableName: string) => void;
-  renameTable: (oldName: string, newName: string) => void;
-  renameColumn: (
-    tableName: string,
-    oldName: string,
-    newName: string,
-  ) => void;
-  updateEnums: (enums: Enum[]) => void;
-  deleteEnum: (enumName: string) => void;
-  renameEnum: (oldName: string, newName: string) => void;
-  renameEnumOption: (
-    enumName: string,
-    oldName: string,
-    newName: string,
-  ) => void;
+  updateQueryCache: (data: Schema) => void;
 }
 
 function EditorSidebar({
-  activeTab,
+  activeSidebarTab,
   onTabChange,
   sqlContent,
+  schema,
   tables,
   enums,
-  updateTables,
-  deleteTable,
-  renameTable,
-  renameColumn,
-  updateEnums,
-  deleteEnum,
-  renameEnum,
-  renameEnumOption,
+  updateQueryCache,
 }: EditorSidebarProps) {
-  const updateTable = (updated: Table) => {
-    updateTables(tables.map((t) => (t.name === updated.name ? updated : t)));
-  };
+  const updateTables = useCallback(
+    (updated: Table[]) => {
+      if (!schema) return;
+      updateQueryCache({
+        ...schema,
+        definition: { enums, tables: updated },
+      });
+    },
+    [enums, schema, updateQueryCache],
+  );
+
+  const deleteTable = useCallback(
+    (tableName: string) => {
+      updateTables(tables.filter((t) => t.name !== tableName));
+    },
+    [tables, updateTables],
+  );
+
+  const renameTable = useCallback(
+    (oldName: string, newName: string) => {
+      if (!schema) return;
+      updateQueryCache({
+        ...schema,
+        definition: {
+          enums,
+          tables: tables.map((t) =>
+            t.name === oldName ? { ...t, name: newName } : t,
+          ),
+        },
+      });
+    },
+    [enums, schema, tables, updateQueryCache],
+  );
+
+  const renameColumn = useCallback(
+    (tableName: string, oldName: string, newName: string) => {
+      if (!schema) return;
+      updateQueryCache({
+        ...schema,
+        definition: {
+          enums,
+          tables: tables.map((t) =>
+            t.name === tableName
+              ? {
+                ...t,
+                columns: t.columns.map((c) =>
+                  c.name === oldName ? { ...c, name: newName } : c,
+                ),
+              }
+              : t,
+          ),
+        },
+      });
+    },
+    [enums, schema, tables, updateQueryCache],
+  );
+
+  const updateEnums = useCallback(
+    (updated: Enum[]) => {
+      if (!schema) return;
+      updateQueryCache({
+        ...schema,
+        definition: { enums: updated, tables },
+      });
+    },
+    [schema, tables, updateQueryCache],
+  );
+
+  const deleteEnum = useCallback(
+    (enumName: string) => {
+      updateEnums(enums.filter((e) => e.name !== enumName));
+    },
+    [enums, updateEnums],
+  );
+
+  const renameEnum = useCallback(
+    (oldName: string, newName: string) => {
+      if (!schema) return;
+      updateQueryCache({
+        ...schema,
+        definition: {
+          enums: enums.map((e) =>
+            e.name === oldName ? { ...e, name: newName } : e,
+          ),
+          tables,
+        },
+      });
+    },
+    [enums, schema, tables, updateQueryCache],
+  );
+
+  const renameEnumOption = useCallback(
+    (enumName: string, oldName: string, newName: string) => {
+      const trimmed = newName.trim();
+      if (!trimmed || trimmed === oldName) return;
+      if (!schema) return;
+      updateQueryCache({
+        ...schema,
+        definition: {
+          enums: enums.map((e) =>
+            e.name === enumName
+              ? {
+                ...e,
+                options: (e.options ?? []).map((v) =>
+                  v === oldName ? trimmed : v,
+                ),
+              }
+              : e,
+          ),
+          tables,
+        },
+      });
+    },
+    [enums, schema, tables, updateQueryCache],
+  );
 
   const createTable = () => {
     const base = "table";
@@ -91,12 +184,6 @@ function EditorSidebar({
       ...tables,
       { name, position: { x: 0, y: 0 }, columns: [], indexes: [], keys: [], checks: [] },
     ]);
-  };
-
-  const updateEnum = (updated: Enum) => {
-    updateEnums(
-      enums.map((e) => (e.name === updated.name ? updated : e)),
-    );
   };
 
   const createEnum = () => {
@@ -115,7 +202,7 @@ function EditorSidebar({
       <div className="shrink-0 flex w-full h-14 items-stretch">
         <button
           onClick={() => onTabChange("schema")}
-          className={`flex-1 min-w-0 px-4 flex items-center justify-center text-[13px] font-medium transition-colors cursor-pointer border-b-2 ${activeTab === "schema"
+          className={`flex-1 min-w-0 px-4 flex items-center justify-center text-[13px] font-medium transition-colors cursor-pointer border-b-2 ${activeSidebarTab === "schema"
             ? "text-white border-blue-500 bg-white/[0.02]"
             : "text-neutral-500 hover:text-neutral-300 border-transparent"
             }`}
@@ -124,7 +211,7 @@ function EditorSidebar({
         </button>
         <button
           onClick={() => onTabChange("sql")}
-          className={`flex-1 min-w-0 px-4 flex items-center justify-center text-[13px] font-medium transition-colors cursor-pointer border-b-2 ${activeTab === "sql"
+          className={`flex-1 min-w-0 px-4 flex items-center justify-center text-[13px] font-medium transition-colors cursor-pointer border-b-2 ${activeSidebarTab === "sql"
             ? "text-white border-blue-500 bg-white/[0.02]"
             : "text-neutral-500 hover:text-neutral-300 border-transparent"
             }`}
@@ -133,7 +220,7 @@ function EditorSidebar({
         </button>
       </div>
 
-      {activeTab === "schema" ? (
+      {activeSidebarTab === "schema" ? (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="shrink-0 w-full min-w-0 px-4 pt-4 pb-2 flex items-center justify-between">
             <h3 className="text-[11px] font-semibold text-neutral-400 uppercase tracking-widest">
@@ -157,7 +244,7 @@ function EditorSidebar({
                   table={table}
                   allTables={tables}
                   enums={enums}
-                  updateTable={updateTable}
+                  updateTables={updateTables}
                   deleteTable={deleteTable}
                   renameTable={renameTable}
                   renameColumn={renameColumn}
@@ -185,7 +272,8 @@ function EditorSidebar({
                   <EnumSection
                     key={enumItem.name}
                     enum={enumItem}
-                    updateEnum={updateEnum}
+                    enums={enums}
+                    updateEnums={updateEnums}
                     deleteEnum={deleteEnum}
                     renameEnum={renameEnum}
                     renameEnumOption={renameEnumOption}
@@ -206,7 +294,6 @@ function EditorSidebar({
               value={sqlContent}
               theme="vs-dark"
               options={{
-                readOnly: true,
                 minimap: { enabled: false },
                 fontSize: 12,
                 lineNumbers: "on",

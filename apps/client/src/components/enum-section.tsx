@@ -3,7 +3,8 @@ import type { Enum } from "@/types/schema";
 
 interface EnumSectionProps {
   enum: Enum;
-  updateEnum: (updated: Enum) => void;
+  enums: Enum[];
+  updateEnums: (enums: Enum[]) => void;
   deleteEnum: (enumName: string) => void;
   renameEnum: (oldName: string, newName: string) => void;
   renameEnumOption: (
@@ -15,7 +16,8 @@ interface EnumSectionProps {
 
 export function EnumSection({
   enum: enumItem,
-  updateEnum,
+  enums,
+  updateEnums,
   deleteEnum,
   renameEnum,
   renameEnumOption,
@@ -24,6 +26,8 @@ export function EnumSection({
   const [editingEnumName, setEditingEnumName] = useState(false);
   const [editingValue, setEditingValue] = useState<string | null>(null);
   const enumOptions = enumItem.options ?? [];
+  const updateEnum = (updated: Enum) =>
+    updateEnums(enums.map((e) => (e.name === enumItem.name ? updated : e)));
 
   const removeOption = (value: string) => {
     updateEnum({

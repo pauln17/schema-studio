@@ -5,7 +5,7 @@ interface TableSectionProps {
   table: Table;
   allTables: Table[];
   enums: Enum[];
-  updateTable: (updated: Table) => void;
+  updateTables: (tables: Table[]) => void;
   deleteTable: (tableName: string) => void;
   renameTable: (oldName: string, newName: string) => void;
   renameColumn: (
@@ -136,35 +136,16 @@ function TypeDropdown({ value, onChange, enumNames }: TypeDropdownProps) {
   );
 }
 
-function ConstraintToggle({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const style = CONSTRAINT_STYLES[label];
-  return (
-    <button
-      onClick={onClick}
-      className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${active ? style.on : style.off}`}
-    >
-      {label}
-    </button>
-  );
-}
-
 export function TableSection({
   table,
   allTables,
   enums,
-  updateTable,
+  updateTables,
   deleteTable,
   renameTable,
   renameColumn,
 }: TableSectionProps) {
+
   const [expanded, setExpanded] = useState(false);
   const [editingDefaultColumn, setEditingDefaultColumn] = useState<
     string | null
@@ -182,6 +163,9 @@ export function TableSection({
     tableColumns.filter((c) => c.primaryKey).map((c) => c.name),
   );
   const enumNames = enums.map((e) => e.name.toUpperCase());
+
+  const updateTable = (updated: Table) =>
+    updateTables(allTables.map((t) => (t.name === table.name ? updated : t)));
 
   const addColumn = () => {
     const base = "column";
@@ -526,24 +510,24 @@ export function TableSection({
 
               <div className="flex items-center justify-between gap-1 flex-nowrap w-full min-h-[20px]">
                 <div className="flex items-center gap-1">
-                  <ConstraintToggle
-                    label="NN"
-                    active={!!col.notNull}
+                  <button
                     onClick={() => toggleConstraint(col.name, "notNull")}
-                  />
-                  <ConstraintToggle
-                    label="UQ"
-                    active={!!col.unique}
+                    className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${!!col.notNull ? CONSTRAINT_STYLES.NN.on : CONSTRAINT_STYLES.NN.off}`}
+                  >
+                    NN
+                  </button>
+                  <button
                     onClick={() => toggleConstraint(col.name, "unique")}
-                  />
-                  <ConstraintToggle
-                    label="DEFAULT"
-                    active={
-                      col.default !== undefined ||
-                      editingDefaultColumn === col.name
-                    }
+                    className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${!!col.unique ? CONSTRAINT_STYLES.UQ.on : CONSTRAINT_STYLES.UQ.off}`}
+                  >
+                    UQ
+                  </button>
+                  <button
                     onClick={() => toggleDefault(col.name)}
-                  />
+                    className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${col.default !== undefined || editingDefaultColumn === col.name ? CONSTRAINT_STYLES.DEFAULT.on : CONSTRAINT_STYLES.DEFAULT.off}`}
+                  >
+                    DEFAULT
+                  </button>
                 </div>
 
                 {(col.default !== undefined ||
@@ -669,7 +653,6 @@ export function TableSection({
                     (c) =>
                       c.name === indexedCol || !indexedByOthers.has(c.name),
                   );
-
                   return (
                     <div
                       key={idx.name}

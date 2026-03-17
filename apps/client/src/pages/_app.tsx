@@ -1,9 +1,9 @@
-import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import { Nunito } from 'next/font/google';
+import { Nunito } from "next/font/google";
 import { QueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { queryPersister } from '@/lib/query-persister';
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { queryPersister } from "@/lib/query-persister";
+import "@/styles/globals.css";
 
 const nunito = Nunito({
   subsets: ["latin"],

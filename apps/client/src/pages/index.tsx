@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Navbar from "@/components/navbar";
 import ActionCard from "@/components/action-card";
+import Navbar from "@/components/navbar";
 
 export default function Root() {
   return (

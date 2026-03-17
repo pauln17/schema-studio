@@ -1,24 +1,24 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ReactFlow,
+  applyEdgeChanges,
+  applyNodeChanges,
   Background,
   Controls,
-  applyNodeChanges,
-  applyEdgeChanges,
-  type Node,
+  ReactFlow,
   type Edge,
-  type NodeChange,
   type EdgeChange,
+  type Node,
+  type NodeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import EditorSidebar from "@/components/editor-sidebar";
-import EditorNavbar from "@/components/editor-navbar";
-import TableNode from "@/components/table-node";
-import type { Table, Enum, Schema } from "@/types/schema";
-import { schemaToSql } from "@/lib/schema-to-sql";
 import { Group, Panel } from "react-resizable-panels";
+import EditorNavbar from "@/components/editor-navbar";
+import EditorSidebar from "@/components/editor-sidebar";
+import TableNode from "@/components/table-node";
+import { schemaToSql } from "@/lib/schema-to-sql";
+import type { Enum, Schema, Table } from "@/types/schema";
 
 function getReferencedColumns(tableName: string, tables: Table[]): string[] {
   const names: string[] = [];
@@ -94,6 +94,11 @@ export default function Editor() {
   const token = router.query.token as string | undefined;
   const queryClient = useQueryClient();
 
+  const [lastSavedData, setLastSavedData] = useState<Schema | null>(null);
+  const [activeSidebarTab, setActiveSidebarTab] = useState<"schema" | "sql">("schema");
+  const [flowNodes, setFlowNodes] = useState<Node[]>([]);
+  const [flowEdges, setFlowEdges] = useState<Edge[]>([]);
+
   const { data: schema, isLoading } = useQuery<Schema | null>({
     queryKey: ["schema", token],
     queryFn: async () => {
@@ -162,6 +167,9 @@ export default function Editor() {
     },
   });
 
+  const tables = schema?.definition?.tables ?? [];
+  const enums = schema?.definition?.enums ?? [];
+
   const updateQueryCache = useCallback(
     (data: Schema) => {
       queryClient.setQueryData(["schema", token], data);
@@ -169,162 +177,6 @@ export default function Editor() {
     [queryClient, token],
   );
 
-  const [lastSavedData, setLastSavedData] = useState<Schema | null>(null);
-  const [activeSidebarTab, setActiveSidebarTab] = useState<"schema" | "sql">("schema");
-  const [tables, setTables] = useState<Table[]>([]);
-  const [enums, setEnums] = useState<Enum[]>([]);
-  const [flowNodes, setFlowNodes] = useState<Node[]>(() => buildNodes(tables, enums));
-  const [flowEdges, setFlowEdges] = useState<Edge[]>(() => buildEdges(tables));
-
-  const hasUnsavedChanges = useMemo(
-    () => {
-      if (!schema) return false;
-      if (!lastSavedData) return true; // Cache-Only Load: Unknown Server State, Assume Unsaved
-      return JSON.stringify(schema.definition) !== JSON.stringify(lastSavedData.definition);
-    },
-    [schema, lastSavedData],
-  );
-
-  // Syncs API Data to Local State
-  useEffect(() => {
-    if (schema) {
-      setTables(schema.definition.tables ?? []);
-      setEnums(schema.definition.enums ?? []);
-    }
-  }, [schema]);
-
-  // Syncs Local State to React Flow
-  useEffect(() => {
-    setFlowNodes(buildNodes(tables, enums));
-    setFlowEdges(buildEdges(tables));
-  }, [tables, enums]);
-
-  const renameTable = useCallback(
-    (oldName: string, newName: string) => {
-      setTables(
-        tables.map((t) => (t.name === oldName ? { ...t, name: newName } : t)),
-      );
-      updateQueryCache({
-        ...schema,
-        definition: {
-          enums,
-          tables: tables.map((t) =>
-            t.name === oldName ? { ...t, name: newName } : t,
-          ),
-        },
-      } as Schema);
-    },
-    [enums, schema, tables, updateQueryCache],
-  );
-
-  const renameColumn = useCallback(
-    (tableName: string, oldName: string, newName: string) => {
-      setTables(
-        tables.map((t) =>
-          t.name === tableName
-            ? {
-              ...t,
-              columns: t.columns.map((c) =>
-                c.name === oldName ? { ...c, name: newName } : c,
-              ),
-            }
-            : t,
-        ),
-      );
-      updateQueryCache({
-        ...schema,
-        definition: {
-          enums,
-          tables: tables.map((t) =>
-            t.name === tableName
-              ? {
-                ...t,
-                columns: t.columns.map((c) =>
-                  c.name === oldName ? { ...c, name: newName } : c,
-                ),
-              }
-              : t,
-          ),
-        },
-      } as Schema);
-    },
-    [enums, schema, tables, updateQueryCache],
-  );
-
-  const updateTables = useCallback(
-    (updated: Table[]) => {
-      setTables(updated);
-      updateQueryCache({
-        ...schema,
-        definition: { enums, tables: updated },
-      } as Schema);
-    },
-    [enums, schema, updateQueryCache],
-  );
-
-  const deleteTable = useCallback(
-    (tableName: string) => {
-      updateTables(tables.filter((t) => t.name !== tableName));
-    },
-    [tables, updateTables],
-  );
-
-  const updateEnums = useCallback(
-    (updated: Enum[]) => {
-      setEnums(updated);
-      updateQueryCache({
-        ...schema,
-        definition: { tables, enums: updated },
-      } as Schema);
-    },
-    [schema, tables, updateQueryCache],
-  );
-
-  const deleteEnum = useCallback(
-    (enumName: string) => {
-      updateEnums(enums.filter((e) => e.name !== enumName));
-    },
-    [enums, updateEnums],
-  );
-
-  const renameEnum = useCallback(
-    (oldName: string, newName: string) => {
-      const updated = enums.map((e) =>
-        e.name === oldName ? { ...e, name: newName } : e,
-      );
-      setEnums(updated);
-      updateQueryCache({
-        ...schema,
-        definition: { tables, enums: updated },
-      } as Schema);
-    },
-    [enums, schema, updateQueryCache],
-  );
-
-  const renameEnumOption = useCallback(
-    (enumName: string, oldName: string, newName: string) => {
-      const trimmed = newName.trim();
-      if (!trimmed || trimmed === oldName) return;
-      const updated = enums.map((e) =>
-        e.name === enumName
-          ? {
-            ...e,
-            options: (e.options ?? []).map((v) =>
-              v === oldName ? trimmed : v,
-            ),
-          }
-          : e,
-      );
-      setEnums(updated);
-      updateQueryCache({
-        ...schema,
-        definition: { tables, enums: updated },
-      } as Schema);
-    },
-    [enums, schema, updateQueryCache],
-  );
-
-  // Custom Node Types for React Flow
   const nodeTypes = useMemo(() => ({ table: TableNode }), []);
 
   const onNodesChange = useCallback(
@@ -335,7 +187,8 @@ export default function Editor() {
 
   const onNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: Node) => {
-      const tempData = {
+      if (!schema) return;
+      updateQueryCache({
         ...schema,
         definition: {
           enums,
@@ -343,12 +196,10 @@ export default function Editor() {
             t.name === node.id ? { ...t, position: node.position } : t,
           ),
         },
-      };
-      updateQueryCache(tempData as Schema);
+      });
     },
     [enums, schema, tables, updateQueryCache],
   );
-  // First Few Renders -> Undefined Token ETC.
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) =>
@@ -356,13 +207,27 @@ export default function Editor() {
     [],
   );
 
+  useEffect(() => {
+    setFlowNodes(buildNodes(tables, enums));
+    setFlowEdges(buildEdges(tables));
+  }, [schema]);
+
+  const hasUnsavedChanges = useMemo(
+    () => {
+      if (!schema) return false;
+      if (!lastSavedData) return true; // Cache-Only Load: Unknown Server State, Assume Unsaved
+      return JSON.stringify(schema.definition) !== JSON.stringify(lastSavedData.definition);
+    },
+    [schema, lastSavedData],
+  );
+
   const sqlContent = useMemo(
     () =>
       schemaToSql(
-        { name: schema?.name ?? "", definition: { tables, enums } } as Schema,
+        { name: schema?.name ?? "", definition: { enums, tables } } as Schema,
         "postgres"
       ),
-    [schema?.name, tables, enums],
+    [enums, schema?.name, tables],
   );
 
   const isTokenLoading = token && (!router.isReady || isLoading || schema === null);
@@ -378,19 +243,13 @@ export default function Editor() {
       <Group orientation="horizontal">
         <Panel defaultSize="18" minSize="18" maxSize="30">
           <EditorSidebar
-            activeTab={activeSidebarTab}
+            activeSidebarTab={activeSidebarTab}
             onTabChange={setActiveSidebarTab}
             sqlContent={sqlContent}
+            schema={schema ?? null}
             tables={tables}
             enums={enums}
-            updateTables={updateTables}
-            deleteTable={deleteTable}
-            renameTable={renameTable}
-            renameColumn={renameColumn}
-            updateEnums={updateEnums}
-            deleteEnum={deleteEnum}
-            renameEnum={renameEnum}
-            renameEnumOption={renameEnumOption}
+            updateQueryCache={updateQueryCache}
           />
         </Panel>
         <Panel defaultSize="75" minSize="50">
