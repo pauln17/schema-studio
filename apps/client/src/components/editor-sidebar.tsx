@@ -1,6 +1,4 @@
-import { memo, useEffect, useMemo, useState } from "react";
-import MonacoEditor from "@monaco-editor/react";
-import { schemaToSql } from "@/lib/schema-to-sql";
+import { memo } from "react";
 import type { Enum, Schema, Table } from "@/types/schema";
 import { EnumSection } from "./enum-section";
 import { TableSection } from "./table-section";
@@ -51,31 +49,6 @@ function EditorSidebar({
   enums,
   updateQueryCache,
 }: EditorSidebarProps) {
-  const [mounted, setMounted] = useState(false);
-  const [activeSidebarTab, setActiveSidebarTab] = useState<"schema" | "sql">("schema");
-
-  const handleTabChange = (tab: "schema" | "sql") => {
-    setActiveSidebarTab(tab);
-    localStorage.setItem("editor-sidebar-tab", tab);
-  };
-
-  useEffect(() => {
-    const saved = localStorage.getItem("editor-sidebar-tab");
-    if (saved === "sql" || saved === "schema") {
-      setActiveSidebarTab(saved);
-    }
-    setMounted(true);
-  }, []);
-
-  const sqlContent = useMemo(
-    () =>
-      schemaToSql(
-        { name: schema?.name ?? "", definition: { enums, tables } } as Schema,
-        "postgres"
-      ),
-    [enums, schema?.name, tables],
-  );
-
   const updateTables = (updated: Table[]) => {
     if (!schema) return;
     updateQueryCache({
@@ -193,33 +166,9 @@ function EditorSidebar({
     updateEnums([...enums, { name, options: [] }]);
   };
 
-  if (!mounted) return null;
-
   return (
     <div className="w-full min-w-0 h-full bg-[#070707] flex flex-col overflow-hidden">
-      <div className="shrink-0 flex w-full h-14 items-stretch">
-        <button
-          onClick={() => handleTabChange("schema")}
-          className={`flex-1 min-w-0 px-4 flex items-center justify-center text-[13px] font-medium transition-colors cursor-pointer border-b-2 ${activeSidebarTab === "schema"
-            ? "text-white border-blue-500 bg-white/[0.02]"
-            : "text-neutral-500 hover:text-neutral-300 border-transparent"
-            }`}
-        >
-          Schema
-        </button>
-        <button
-          onClick={() => handleTabChange("sql")}
-          className={`flex-1 min-w-0 px-4 flex items-center justify-center text-[13px] font-medium transition-colors cursor-pointer border-b-2 ${activeSidebarTab === "sql"
-            ? "text-white border-blue-500 bg-white/[0.02]"
-            : "text-neutral-500 hover:text-neutral-300 border-transparent"
-            }`}
-        >
-          SQL
-        </button>
-      </div>
-
-      {activeSidebarTab === "schema" ? (
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="shrink-0 w-full min-w-0 px-4 pt-4 pb-2 flex items-center justify-between">
             <h3 className="text-[11px] font-semibold text-neutral-400 uppercase tracking-widest">
               Tables
@@ -283,26 +232,6 @@ function EditorSidebar({
 
           <SidebarFooter tables={tables} enums={enums} />
         </div>
-      ) : (
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-            <MonacoEditor
-              height="100%"
-              defaultLanguage="sql"
-              value={sqlContent}
-              theme="vs-dark"
-              options={{
-                minimap: { enabled: false },
-                fontSize: 12,
-                lineNumbers: "on",
-                padding: { top: 12, bottom: 12 },
-                scrollBeyondLastLine: false,
-              }}
-            />
-          </div>
-          <SidebarFooter tables={tables} enums={enums} />
-        </div>
-      )}
     </div>
   );
 }

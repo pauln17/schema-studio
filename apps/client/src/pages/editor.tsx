@@ -233,7 +233,7 @@ export default function Editor() {
     </div>
   ) : (
     <div className="flex w-screen h-screen overflow-hidden">
-      <div className="w-120 shrink-0 flex flex-col overflow-hidden">
+      <div className="w-100 shrink-0 flex flex-col overflow-hidden">
         <EditorSidebar
           schema={schema ?? null}
           tables={tables}
