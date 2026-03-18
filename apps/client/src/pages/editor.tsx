@@ -232,16 +232,7 @@ export default function Editor() {
       </div>
     </div>
   ) : (
-    <div className="flex w-screen h-screen overflow-hidden">
-      <div className="w-100 shrink-0 flex flex-col overflow-hidden">
-        <EditorSidebar
-          schema={schema ?? null}
-          tables={tables}
-          enums={enums}
-          updateQueryCache={updateQueryCache}
-        />
-      </div>
-      <div className=" flex flex-col w-full h-full">
+    <div className="flex w-screen h-screen overflow-hidden flex-col">
         <EditorNavbar
           schema={schema ?? null}
           token={token ?? ""}
@@ -250,7 +241,16 @@ export default function Editor() {
           isSaved={!hasUnsavedChanges}
           renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
         />
-        <div className="flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 min-w-0 flex-col sm:flex-row">
+        <div className="w-full sm:w-72 md:w-80 shrink-0 flex flex-col overflow-hidden border-b sm:border-b-0 border-white/[0.06] max-h-[45%] sm:max-h-full">
+          <EditorSidebar
+            schema={schema ?? null}
+            tables={tables}
+            enums={enums}
+            updateQueryCache={updateQueryCache}
+          />
+        </div>
+        <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
           <ReactFlow
             className="[&_.react-flow__node]:!cursor-default [&_.react-flow__node]:!pointer-events-auto"
             nodes={flowNodes}
