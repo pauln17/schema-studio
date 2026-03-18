@@ -92,7 +92,6 @@ export default function Editor() {
   const token = router.query.token as string | undefined;
   const queryClient = useQueryClient();
 
-  const [lastSavedData, setLastSavedData] = useState<Schema | null>(null);
   const [flowNodes, setFlowNodes] = useState<Node[]>([]);
   const [flowEdges, setFlowEdges] = useState<Edge[]>([]);
 
@@ -116,7 +115,6 @@ export default function Editor() {
         return null;
       }
       const data = await res.json();
-      setLastSavedData(data);
       return data;
     },
     enabled: !!token && router.isReady
@@ -164,7 +162,6 @@ export default function Editor() {
       const saved = data.schema ?? data;
       if (token) {
         queryClient.setQueryData(["schema", token], saved);
-        setLastSavedData(saved);
       }
     },
   });
@@ -214,15 +211,6 @@ export default function Editor() {
     setFlowEdges(buildEdges(tables));
   }, [schema]);
 
-  const hasUnsavedChanges = useMemo(
-    () => {
-      if (!schema) return false;
-      if (!lastSavedData) return true; // Cache-Only Load: Unknown Server State, Assume Unsaved
-      return JSON.stringify(schema.definition) !== JSON.stringify(lastSavedData.definition);
-    },
-    [schema, lastSavedData],
-  );
-
   const isTokenLoading = token && (!router.isReady || isLoading || schema === null);
   return isTokenLoading ? (
     <div className="flex w-screen h-screen items-center justify-center bg-black">
@@ -233,14 +221,13 @@ export default function Editor() {
     </div>
   ) : (
     <div className="flex w-screen h-screen overflow-hidden flex-col">
-        <EditorNavbar
-          schema={schema ?? null}
-          token={token ?? ""}
-          saveSchema={() => saveSchema()}
-          isPending={isPending}
-          isSaved={!hasUnsavedChanges}
-          renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
-        />
+      <EditorNavbar
+        schema={schema ?? null}
+        token={token ?? ""}
+        saveSchema={() => saveSchema()}
+        isPending={isPending}
+        renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
+      />
       <div className="flex flex-1 min-h-0 min-w-0 flex-col sm:flex-row">
         <div className="w-full sm:w-72 md:w-80 shrink-0 flex flex-col overflow-hidden border-b sm:border-b-0 border-white/[0.06] max-h-[45%] sm:max-h-full">
           <EditorSidebar
