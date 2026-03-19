@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { Column, Table, Enum, Index } from "@/types/schema";
+import { normalizeIdentifier } from "@/lib/schema-to-sql";
 
 interface TableSectionProps {
   table: Table;
@@ -147,7 +148,7 @@ export function TableSection({
 }: TableSectionProps) {
 
   const [expanded, setExpanded] = useState(false);
-  const [editingDefaultColumn, setEditingDefaultColumn] = useState<
+  const [editingDefaultValue, setEditingDefaultValue] = useState<
     string | null
   >(null);
   const [editingTableName, setEditingTableName] = useState(false);
@@ -256,12 +257,12 @@ export function TableSection({
     const col = tableColumns.find((c) => c.name === colName);
     if (!col) return;
 
-    if (col.default !== undefined || editingDefaultColumn === colName) {
-      setEditingDefaultColumn(null);
+    if (col.default !== undefined || editingDefaultValue === colName) {
+      setEditingDefaultValue(null);
       if (col.default !== undefined)
         updateColumn(colName, { default: undefined });
     } else {
-      setEditingDefaultColumn(colName);
+      setEditingDefaultValue(colName);
     }
   };
 
@@ -372,7 +373,7 @@ export function TableSection({
               defaultValue={table.name}
               className="min-w-[80px] h-5 px-1.5 text-[10px] font-mono leading-none bg-white/[0.06] border border-white/[0.08] rounded text-neutral-300 placeholder-neutral-600 outline-none focus:border-blue-500/50 box-border text-sm"
               onBlur={(e) => {
-                const newName = e.target.value.trim().toLowerCase();
+                const newName = normalizeIdentifier(e.target.value);
                 if (newName && newName !== table.name)
                   renameTable(table.name, newName);
                 setEditingTableName(false);
@@ -469,7 +470,7 @@ export function TableSection({
                       defaultValue={col.name}
                       className="w-20 max-w-[100px] h-5 px-1.5 text-[10px] font-mono leading-none bg-white/[0.06] border border-white/[0.08] rounded text-neutral-300 placeholder-neutral-600 outline-none focus:border-blue-500/50 box-border"
                       onBlur={(e) => {
-                        const newName = e.target.value.trim().toLowerCase();
+                        const newName = normalizeIdentifier(e.target.value);
                         if (newName && newName !== col.name)
                           renameColumn(table.name, col.name, newName);
                         setEditingColumnName(null);
@@ -524,16 +525,16 @@ export function TableSection({
                   </button>
                   <button
                     onClick={() => toggleDefault(col.name)}
-                    className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${col.default !== undefined || editingDefaultColumn === col.name ? CONSTRAINT_STYLES.DEFAULT.on : CONSTRAINT_STYLES.DEFAULT.off}`}
+                    className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${col.default !== undefined || editingDefaultValue === col.name ? CONSTRAINT_STYLES.DEFAULT.on : CONSTRAINT_STYLES.DEFAULT.off}`}
                   >
                     DEFAULT
                   </button>
                 </div>
 
                 {(col.default !== undefined ||
-                  editingDefaultColumn === col.name) && (
+                  editingDefaultValue === col.name) && (
                     <div className="flex items-center gap-3 shrink-0 h-5">
-                      {editingDefaultColumn === col.name ? (
+                      {editingDefaultValue === col.name ? (
                         <input
                           type="text"
                           maxLength={20}
@@ -543,19 +544,19 @@ export function TableSection({
                           onBlur={(e) => {
                             const v = e.target.value.trim();
                             changeDefault(col.name, v);
-                            setEditingDefaultColumn(null);
+                            setEditingDefaultValue(null);
                           }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter")
                               (e.target as HTMLInputElement).blur();
-                            if (e.key === "Escape") setEditingDefaultColumn(null);
+                            if (e.key === "Escape") setEditingDefaultValue(null);
                           }}
                           autoFocus
                         />
                       ) : (
                         <button
                           type="button"
-                          onClick={() => setEditingDefaultColumn(col.name)}
+                          onClick={() => setEditingDefaultValue(col.name)}
                           className="text-[10px] font-mono text-emerald-400/90 hover:text-emerald-400 cursor-pointer"
                         >
                           ={" "}

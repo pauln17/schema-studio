@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Enum } from "@/types/schema";
+import { normalizeIdentifier } from "@/lib/schema-to-sql";
 
 interface EnumSectionProps {
   enum: Enum;
@@ -101,7 +102,7 @@ export function EnumSection({
               defaultValue={enumItem.name}
               className="min-w-[80px] h-5 px-1.5 text-[10px] font-mono leading-none bg-white/[0.06] border border-white/[0.08] rounded text-neutral-300 placeholder-neutral-600 outline-none focus:border-blue-500/50 box-border text-sm"
               onBlur={(e) => {
-                const newName = e.target.value.trim().toLowerCase();
+                const newName = normalizeIdentifier(e.target.value);
                 if (newName && newName !== enumItem.name)
                   renameEnum(enumItem.name, newName);
                 setEditingEnumName(false);
@@ -159,11 +160,10 @@ export function EnumSection({
                     defaultValue={value}
                     className="flex-1 min-w-0 h-5 px-1.5 text-[10px] font-mono leading-none bg-white/[0.06] border border-white/[0.08] rounded text-neutral-300 placeholder-neutral-600 outline-none focus:border-emerald-500/50 box-border text-xs"
                     onBlur={(e) => {
-                      renameEnumOption(
-                        enumItem.name,
-                        value,
-                        e.target.value,
-                      );
+                      const newValue = normalizeIdentifier(e.target.value);
+                      if (newValue && newValue !== value) {
+                        renameEnumOption(enumItem.name, value, newValue);
+                      }
                       setEditingValue(null);
                     }}
                     onKeyDown={(e) => {
