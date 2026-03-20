@@ -98,34 +98,67 @@ function EditorSidebar({
 
   const renameTable = (oldName: string, newName: string) => {
     if (!schema) return;
+
+    const primary = tables.filter((t) => t.name === oldName)
+    const other = tables.filter((t) => t.name !== oldName)
+
+    const updatedPrimary = primary.map((t) => t.name === oldName ? {
+      ...t,
+      name: newName
+    } : t)
+
+    const updatedOther = other.map((t) => t.name !== oldName ? {
+      ...t,
+      columns: t.columns.map((c) => c.references?.referencedTable === oldName ? {
+        ...c,
+        references: {
+          ...c.references,
+          referencedTable: newName
+        }
+      } : c)
+    } : t)
+
+    const newTables = [...updatedPrimary, ...updatedOther]
+
     updateQueryCache({
       ...schema,
       definition: {
         enums,
-        tables: tables.map((t) =>
-          t.name === oldName ? { ...t, name: newName } : t,
-        ),
+        tables: newTables
       },
     });
   };
 
   const renameColumn = (tableName: string, oldName: string, newName: string) => {
     if (!schema) return;
+
+    const primary = tables.filter((t) => t.name === tableName)
+    const other = tables.filter((t) => t.name !== tableName)
+
+    const updatedPrimary = primary.map((t) => t.name === tableName ? {
+      ...t,
+      columns: t.columns.map((c) => c.name === oldName ? { ...c, name: newName } : c)
+    } : t)
+
+    const updatedOther = other.map((t) => t.name !== tableName ? {
+      ...t,
+      columns: t.columns.map((c) => c.references?.referencedColumn === oldName && c.references?.referencedTable === tableName ? {
+        ...c,
+        references: {
+          ...c.references,
+          referencedColumn: newName
+        }
+      } : c)
+    } : t)
+
+    const newTables = [...updatedPrimary, ...updatedOther]
+
     updateQueryCache({
       ...schema,
       definition: {
         enums,
-        tables: tables.map((t) =>
-          t.name === tableName
-            ? {
-              ...t,
-              columns: t.columns.map((c) =>
-                c.name === oldName ? { ...c, name: newName } : c,
-              ),
-            }
-            : t,
-        ),
-      },
+        tables: newTables
+      }
     });
   };
 
@@ -202,7 +235,7 @@ function EditorSidebar({
   };
 
   return (
-    <div className="w-full min-w-0 h-full bg-[#070707] flex flex-col overflow-hidden">
+    <div className="w-full min-w-0 h-full bg-[#070707] flex flex-col overflow-hidden" >
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="shrink-0 w-full min-w-0 px-4 pt-4 pb-2 flex items-center justify-between">
           <h3 className="text-[11px] font-semibold text-neutral-400 uppercase tracking-widest">
