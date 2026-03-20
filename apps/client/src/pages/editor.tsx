@@ -13,6 +13,7 @@ import {
   type NodeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { toast, ToastContainer } from "react-toastify";
 import EditorNavbar from "@/components/editor-navbar";
 import EditorSidebar from "@/components/editor-sidebar";
 import TableNode from "@/components/table-node";
@@ -98,24 +99,31 @@ export default function Editor() {
   const { data: schema, isLoading } = useQuery<Schema | null>({
     queryKey: ["schema", token],
     queryFn: async () => {
-      const res = await fetch("http://localhost:5001/schemas", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (!res.ok) {
-        if (res.status === 429) {
-          router.replace(`/editor/limit`);
-          return null;
+      try {
+        const res = await fetch("http://localhost:5001/schemas", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (res.status >= 400) {
+          if (res.status === 429) {
+            router.replace(`/editor/limit`);
+            return;
+          }
+          router.push("/editor");
+          const e = await res.json();
+          console.error("[GET /schema]", e);
+          return;
         }
-        router.push("/editor");
-        const e = await res.json();
-        console.error("[GET /schema]", e);
-        return null;
+        const data = await res.json();
+        return data;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : "Unknown Error";
+        toast.error(`Server Error: ${msg}`, {
+          position: "top-center",
+        });
       }
-      const data = await res.json();
-      return data;
     },
     enabled: !!token && router.isReady
   });
@@ -212,50 +220,55 @@ export default function Editor() {
   }, [schema]);
 
   const isTokenLoading = token && (!router.isReady || isLoading || schema === null);
-  return isTokenLoading ? (
-    <div className="flex w-screen h-screen items-center justify-center bg-black">
-      <div className="flex flex-col items-center gap-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-600 border-t-neutral-300" />
-        <p className="text-sm text-neutral-500">Loading Schema...</p>
-      </div>
-    </div>
-  ) : (
-    <div className="flex w-screen h-screen overflow-hidden flex-col">
-      <EditorNavbar
-        schema={schema ?? null}
-        token={token ?? ""}
-        saveSchema={() => saveSchema()}
-        isPending={isPending}
-        renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
-      />
-      <div className="flex flex-1 min-h-0 min-w-0 flex-col sm:flex-row">
-        <div className="w-full sm:w-72 md:w-80 shrink-0 flex flex-col overflow-hidden border-b sm:border-b-0 border-white/[0.06] max-h-[45%] sm:max-h-full">
-          <EditorSidebar
-            schema={schema ?? { name: "Untitled", definition: { tables: [], enums: [] } }}
-            tables={tables}
-            enums={enums}
-            updateQueryCache={updateQueryCache}
-            token={token ?? undefined}
+  return (
+    <>
+      <ToastContainer theme="dark" />
+      {isTokenLoading ? (
+        <div className="flex w-screen h-screen items-center justify-center bg-black">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-neutral-600 border-t-neutral-300" />
+            <p className="text-sm text-neutral-500">Loading Schema...</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex w-screen h-screen overflow-hidden flex-col">
+          <EditorNavbar
+            schema={schema ?? null}
+            token={token ?? ""}
+            saveSchema={() => saveSchema()}
+            isPending={isPending}
+            renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
           />
+          <div className="flex flex-1 min-h-0 min-w-0 flex-col sm:flex-row">
+            <div className="w-full sm:w-72 md:w-80 shrink-0 flex flex-col overflow-hidden border-b sm:border-b-0 border-white/[0.06] max-h-[45%] sm:max-h-full">
+              <EditorSidebar
+                schema={schema ?? { name: "Untitled", definition: { tables: [], enums: [] } }}
+                tables={tables}
+                enums={enums}
+                updateQueryCache={updateQueryCache}
+                token={token ?? undefined}
+              />
+            </div>
+            <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+              <ReactFlow
+                className="[&_.react-flow__node]:!cursor-default [&_.react-flow__node]:!pointer-events-auto"
+                nodes={flowNodes}
+                edges={flowEdges}
+                nodeTypes={nodeTypes}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onNodeDragStop={onNodeDragStop}
+                colorMode="dark"
+                proOptions={{ hideAttribution: true }}
+                fitView
+              >
+                <Background gap={16} size={1} className="!bg-[#0a0a0a]" />
+                <Controls className="!mr-5" position="top-right" />
+              </ReactFlow>
+            </div>
+          </div>
         </div>
-        <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-          <ReactFlow
-            className="[&_.react-flow__node]:!cursor-default [&_.react-flow__node]:!pointer-events-auto"
-            nodes={flowNodes}
-            edges={flowEdges}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeDragStop={onNodeDragStop}
-            colorMode="dark"
-            proOptions={{ hideAttribution: true }}
-            fitView
-          >
-            <Background gap={16} size={1} className="!bg-[#0a0a0a]" />
-            <Controls className="!mr-5" position="top-right" />
-          </ReactFlow>
-        </div>
-      </div>
-    </div>
-  );
+      )};
+    </>
+  )
 }
