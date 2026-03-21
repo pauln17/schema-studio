@@ -6,18 +6,18 @@ import schemaRouter from "./schema";
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:3000",
-];
+const allowedOrigins = process.env.CORS_ORIGIN?.split(",") ?? [];
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+if (allowedOrigins.length > 0) {
+  app.use(
+    cors({
+      origin: allowedOrigins,
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
+}
 
 app.use(express.json({ limit: "1mb" }));
 app.use(rateLimiter);

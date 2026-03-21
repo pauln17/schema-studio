@@ -30,7 +30,7 @@ export default function EditorNavbar({
   const generateLinkMutation = useMutation({
     mutationFn: async () => {
       if (!token) throw new Error("No token");
-      const res = await fetch("http://localhost:5001/schemas/token", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/schemas/token`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -108,9 +108,9 @@ export default function EditorNavbar({
             token
               ? () => saveSchema()
               : () => {
-                  saveSchema();
-                  localStorage.setItem("OPEN_SHARE_AFTER_SAVE", "true");
-                }
+                saveSchema();
+                localStorage.setItem("OPEN_SHARE_AFTER_SAVE", "true");
+              }
           }
           disabled={isPending}
         >

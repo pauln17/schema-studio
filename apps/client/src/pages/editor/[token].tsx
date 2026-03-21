@@ -14,7 +14,7 @@ export default function EditorWithToken() {
     queryKey: ["schema", token],
     queryFn: async () => {
       try {
-        const res = await fetch("http://localhost:5001/schemas", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/schemas`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
