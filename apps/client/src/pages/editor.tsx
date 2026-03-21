@@ -107,13 +107,7 @@ export default function Editor() {
           },
         });
         if (res.status >= 400) {
-          if (res.status === 429) {
-            router.replace(`/editor/limit`);
-            return;
-          }
           router.push("/editor");
-          const e = await res.json();
-          console.error("[GET /schema]", e);
           return;
         }
         const data = await res.json();
@@ -121,7 +115,10 @@ export default function Editor() {
       } catch (e) {
         const msg = e instanceof Error ? e.message.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : "Unknown Error";
         toast.error(`Server Error: ${msg}`, {
-          position: "top-center",
+          position: "bottom-center",
+          autoClose: 5000,
+          closeOnClick: true,
+          theme: "dark",
         });
       }
     },
