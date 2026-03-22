@@ -195,7 +195,9 @@ export function TableSection({
     updateTable({
       ...table,
       columns: tableColumns.filter((c) => c.name !== colName),
-      indexes: tableIndexes.filter((i) => i.indexedColumn !== colName),
+      indexes: tableIndexes.filter(
+        (i) => !i.indexedColumns?.includes(colName),
+      ),
     });
   };
 
@@ -274,13 +276,9 @@ export function TableSection({
     updateColumn(colName, { type });
   };
 
-  const indexedColumns = new Set(tableIndexes.map((i) => i.indexedColumn));
   const addIndex = () => {
-    const firstNonIndexedCol = tableColumns.find(
-      (c) => !indexedColumns.has(c.name),
-    )!.name;
-    const name = `idx_${table.name}_${firstNonIndexedCol}`;
-    const newIndex: Index = { indexedColumn: firstNonIndexedCol, name };
+    const name = `${table.name}_untitled_idx`;
+    const newIndex: Index = { indexedColumns: [], name };
     updateTable({ ...table, indexes: [...tableIndexes, newIndex] });
   };
 
@@ -618,7 +616,6 @@ export function TableSection({
               </span>
               <button
                 onClick={addIndex}
-                disabled={tableColumns.every((c) => indexedColumns.has(c.name))}
                 className="cursor-pointer p-1 rounded text-neutral-500 hover:text-violet-400 hover:bg-white/[0.06] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-neutral-500"
                 title="Add Index"
               >
@@ -644,32 +641,28 @@ export function TableSection({
             ) : (
               <div className="space-y-1.5">
                 {tableIndexes.map((idx) => {
-                  const indexedCol = idx.indexedColumn;
-                  const indexedByOthers = new Set(
-                    tableIndexes
-                      .filter((i) => i.name !== idx.name)
-                      .map((i) => i.indexedColumn),
-                  );
-                  const availableColumns = tableColumns.filter(
-                    (c) =>
-                      c.name === indexedCol || !indexedByOthers.has(c.name),
-                  );
+                  const selectedCol = idx.indexedColumns?.[0] ?? "";
                   return (
                     <div
                       key={idx.name}
                       className="flex items-center gap-2 group"
                     >
                       <select
-                        value={indexedCol}
-                        onChange={(e) =>
+                        value={selectedCol}
+                        onChange={(e) => {
+                          const col = e.target.value;
+                          if (!col) return;
                           updateIndex(idx.name, {
-                            indexedColumn: e.target.value,
-                            name: `idx_${table.name}_${e.target.value}`,
-                          })
-                        }
+                            indexedColumns: [col],
+                            name: `${table.name}_${col}_idx`,
+                          });
+                        }}
                         className="flex-1 min-w-0 bg-white/[0.04] border border-white/[0.06] rounded px-2 py-1 text-[10px] font-mono text-neutral-400 outline-none cursor-pointer"
                       >
-                        {availableColumns.map((c) => (
+                        <option value="" disabled className="bg-neutral-800">
+                          Select Column
+                        </option>
+                        {tableColumns.map((c) => (
                           <option
                             key={c.name}
                             value={c.name}

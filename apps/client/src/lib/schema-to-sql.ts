@@ -46,7 +46,7 @@ const toPostgresSql = (schema: Schema): string => {
 
     const indexesSql: string = (schema.definition?.tables ?? [])
         .map((table) =>
-            table.indexes.map((i) => `CREATE INDEX ${i.name} ON ${table.name} (${i.indexedColumn});`).join("\n")
+            table.indexes.map((i) => `CREATE INDEX ${i.name} ON ${table.name} (${i.indexedColumns.join(", ")});`).join("\n")
         )
         .filter((block) => block !== "")
         .join("\n\n");

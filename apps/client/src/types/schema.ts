@@ -29,7 +29,7 @@ export interface Enum {
 }
 
 export interface Index {
-  indexedColumn: string[];
+  indexedColumns: string[];
   name: string;
 }
 

@@ -25,7 +25,10 @@ Content-Type: application/json
           { "name": "birth_date", "type": "DATE" },
           { "name": "created_at", "type": "TIMESTAMP", "default": "now()", "notNull": true }
         ],
-        "indexes": [],
+        "indexes": [
+          { "indexedColumns": ["role", "active"], "name": "users_role_active_idx" },
+          { "indexedColumns": ["created_at", "id"], "name": "users_created_at_id_idx" }
+        ],
         "keys": ["id"],
         "checks": []
       },
@@ -43,9 +46,12 @@ Content-Type: application/json
           { "name": "created_at", "type": "TIMESTAMP", "default": "now()", "notNull": true }
         ],
         "indexes": [
-          { "indexedColumn": "user_id", "name": "idx_posts_user_id" },
-          { "indexedColumn": "status", "name": "idx_posts_status" },
-          { "indexedColumn": "published_at", "name": "idx_posts_published_at" }
+          { "indexedColumns": ["user_id"], "name": "posts_user_id_idx" },
+          { "indexedColumns": ["status"], "name": "posts_status_idx" },
+          { "indexedColumns": ["published_at"], "name": "posts_published_at_idx" },
+          { "indexedColumns": ["status", "published_at"], "name": "posts_status_published_at_idx" },
+          { "indexedColumns": ["user_id", "created_at"], "name": "posts_user_id_created_at_idx" },
+          { "indexedColumns": ["status", "view_count", "published_at"], "name": "posts_status_view_count_published_at_idx" }
         ],
         "keys": ["id"],
         "checks": ["status IN ('draft', 'published', 'archived')", "view_count >= 0", "published_at IS NULL OR published_at >= created_at"]
@@ -61,8 +67,10 @@ Content-Type: application/json
           { "name": "created_at", "type": "TIMESTAMP", "default": "now()", "notNull": true }
         ],
         "indexes": [
-          { "indexedColumn": "post_id", "name": "idx_comments_post_id" },
-          { "indexedColumn": "user_id", "name": "idx_comments_user_id" }
+          { "indexedColumns": ["post_id"], "name": "comments_post_id_idx" },
+          { "indexedColumns": ["user_id"], "name": "comments_user_id_idx" },
+          { "indexedColumns": ["post_id", "created_at"], "name": "comments_post_id_created_at_idx" },
+          { "indexedColumns": ["user_id", "created_at"], "name": "comments_user_id_created_at_idx" }
         ],
         "keys": ["id"],
         "checks": []

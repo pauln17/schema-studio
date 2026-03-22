@@ -19,8 +19,8 @@ const columnSchema = z.object({
 });
 
 const indexSchema = z.object({
-  indexedColumn: z.string(),
   name: z.string(),
+  indexedColumns: z.array(z.string()).min(1),
 });
 
 const tableSchema = z.object({

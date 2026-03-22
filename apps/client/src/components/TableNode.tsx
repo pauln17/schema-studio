@@ -114,12 +114,11 @@ function TableNode({ data }: TableNodeProps) {
                             <div
                                 key={idx.name}
                                 className="flex items-start gap-2 min-w-0"
-                                title={`${idx.name} (${idx.indexedColumn})`}
                             >
                                 <span className="w-1.5 h-1.5 mt-1.5 rounded-full bg-white/40 shrink-0" />
                                 <div className="min-w-0 flex-1">
                                     <span className="text-[10px] font-mono text-white/60 block truncate">{idx.name}</span>
-                                    <span className="text-[10px] font-mono text-white/40 block truncate">({idx.indexedColumn})</span>
+                                    <span className="text-[10px] font-mono text-white/40 block truncate">({idx.indexedColumns?.join(", ")})</span>
                                 </div>
                             </div>
                         ))}

@@ -88,7 +88,7 @@ const sqlToSchema = (sql: string): Schema => {
       const idxColumns = statement.expressions.map((e) => toSql.expr(e.expression).toString());
       const newIndex: Index = {
         name: idxName,
-        indexedColumn: idxColumns,
+        indexedColumns: idxColumns,
       }
       indexes.push(newIndex);
     }
