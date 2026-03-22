@@ -8,6 +8,13 @@ const getDataTypeName = (dataType: DataTypeDef): string => {
   return `${getDataTypeName(dataType.arrayOf)}[]`;
 }
 
+const formatSqlExpr = (s: string): string =>
+  s
+    .replace(/\b([a-z_][a-z0-9_]*)\s+\(\s*\)/gi, (_, id: string) => `${id}()`)
+    .replace(/\s+\)/g, ")")
+    .replace(/\s+/g, " ")
+    .trim();
+
 // SQL -> Dialect Specific ASTs -> Schema
 const sqlToSchema = (sql: string): Schema => {
   const ast: Statement[] = parse(sql);
@@ -15,7 +22,6 @@ const sqlToSchema = (sql: string): Schema => {
   const tables: Table[] = [];
   const indexes: Index[] = [];
   const enums: Enum[] = [];
-  console.log(ast);
 
   ast.map((statement) => {
     if (statement.type === 'create enum') {
@@ -36,6 +42,12 @@ const sqlToSchema = (sql: string): Schema => {
       };
       const columns: Column[] = [];
 
+      const primaryKeysByColumn: string[] = []
+      for (const c of statement.constraints ?? []) {
+        if (c.type !== 'primary key') continue;
+        primaryKeysByColumn.push(...c.columns.map((c) => c.name));
+      }
+
       const outlineRefByColumn = new Map<string, References>();
       for (const c of statement.constraints ?? []) {
         if (c.type !== 'foreign key') continue;
@@ -45,11 +57,9 @@ const sqlToSchema = (sql: string): Schema => {
         });
       }
 
-      const primaryKeysByColumn: string[] = []
-      for (const c of statement.constraints ?? []) {
-        if (c.type !== 'primary key') continue;
-        primaryKeysByColumn.push(...c.columns.map((c) => c.name));
-      }
+      newTable.checks = (statement.constraints ?? [])
+        .filter((c) => c.type === "check")
+        .map((c) => formatSqlExpr(toSql.expr(c.expr)));
 
       statement.columns.forEach((astCol) => {
         if (astCol.kind !== 'column') return;
@@ -78,29 +88,32 @@ const sqlToSchema = (sql: string): Schema => {
             ...(references && { references }),
           })
         };
-        columns.push(column);
-        newTable.keys = primaryKeysByColumn.length > 0 ? primaryKeysByColumn : columns.filter((c) => c.primaryKey).map((c) => c.name);
-        newTable.columns.push(...columns);
-        tables.push(newTable);
-      });
-    } else if (statement.type === 'create index') {
-      const idxName = statement.expressions.map((e) => toSql.expr(e.expression).toString()).join('_');
-      const idxColumns = statement.expressions.map((e) => toSql.expr(e.expression).toString());
-      const newIndex: Index = {
-        name: idxName,
-        indexedColumns: idxColumns,
+
+
       }
-      indexes.push(newIndex);
-    }
+      columns.push(column);
+      newTable.keys = primaryKeysByColumn.length > 0 ? primaryKeysByColumn : columns.filter((c) => c.primaryKey).map((c) => c.name);
+      newTable.columns.push(...columns);
+      tables.push(newTable);
+    );
+} else if (statement.type === 'create index') {
+  const idxName = statement.expressions.map((e) => toSql.expr(e.expression).toString()).join('_');
+  const idxColumns = statement.expressions.map((e) => toSql.expr(e.expression).toString());
+  const newIndex: Index = {
+    name: idxName,
+    indexedColumns: idxColumns,
+  }
+  indexes.push(newIndex);
+}
   })
 
-  return {
-    name: "Example Schema",
-    definition: {
-      tables: [],
-      enums: [],
-    },
-  };
+return {
+  name: "Example Schema",
+  definition: {
+    tables: [],
+    enums: [],
+  },
+};
 };
 
 const sqlExample = `
