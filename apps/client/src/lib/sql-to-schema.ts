@@ -89,31 +89,29 @@ const sqlToSchema = (sql: string): Schema => {
           })
         };
 
-
-      }
-      columns.push(column);
+        columns.push(column);
+      });
       newTable.keys = primaryKeysByColumn.length > 0 ? primaryKeysByColumn : columns.filter((c) => c.primaryKey).map((c) => c.name);
       newTable.columns.push(...columns);
       tables.push(newTable);
-    );
-} else if (statement.type === 'create index') {
-  const idxName = statement.expressions.map((e) => toSql.expr(e.expression).toString()).join('_');
-  const idxColumns = statement.expressions.map((e) => toSql.expr(e.expression).toString());
-  const newIndex: Index = {
-    name: idxName,
-    indexedColumns: idxColumns,
-  }
-  indexes.push(newIndex);
-}
+    } else if (statement.type === 'create index') {
+      const idxName = statement.expressions.map((e) => toSql.expr(e.expression).toString()).join('_');
+      const idxColumns = statement.expressions.map((e) => toSql.expr(e.expression).toString());
+      const newIndex: Index = {
+        name: idxName,
+        indexedColumns: idxColumns,
+      }
+      indexes.push(newIndex);
+    }
   })
 
-return {
-  name: "Example Schema",
-  definition: {
-    tables: [],
-    enums: [],
-  },
-};
+  return {
+    name: "Example Schema",
+    definition: {
+      tables: [],
+      enums: [],
+    },
+  };
 };
 
 const sqlExample = `
