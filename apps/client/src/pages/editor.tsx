@@ -112,6 +112,12 @@ export default function Editor({ schema, token, isLoading, saveSchema, isPending
     [],
   );
 
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) =>
+      setFlowEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
+    [],
+  );
+
   const onNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       if (!schema) return;
@@ -126,12 +132,6 @@ export default function Editor({ schema, token, isLoading, saveSchema, isPending
       });
     },
     [enums, schema, tables, updateQueryCache],
-  );
-
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) =>
-      setFlowEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
-    [],
   );
 
   useEffect(() => {
@@ -188,7 +188,7 @@ export default function Editor({ schema, token, isLoading, saveSchema, isPending
             </div>
           </div>
         </div>
-      )};
+      )}
     </>
   )
 }
