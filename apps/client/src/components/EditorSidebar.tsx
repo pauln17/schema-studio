@@ -53,6 +53,29 @@ function SidebarFooter({ schema, tables, enums, updateQueryCache }: SidebarFoote
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
+            if (!file.name.toLowerCase().endsWith(".sql")) {
+              toast.warn("Invalid File Type", {
+                position: "bottom-center",
+                autoClose: 3000,
+                pauseOnHover: false,
+                closeOnClick: true,
+                theme: "dark",
+              });
+              e.target.value = "";
+              return;
+            }
+            const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+            if (file.size > MAX_SIZE_BYTES) {
+              toast.error("Max 5MB Allowed", {
+                position: "bottom-center",
+                autoClose: 3000,
+                pauseOnHover: false,
+                closeOnClick: true,
+                theme: "dark",
+              });
+              e.target.value = "";
+              return;
+            }
             const reader = new FileReader();
             reader.onload = (e) => {
               const text = e.target?.result as string;
