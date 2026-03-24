@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import {
   applyEdgeChanges,
   applyNodeChanges,
@@ -11,8 +12,8 @@ import {
   type NodeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { io } from "socket.io-client";
 import { ToastContainer, toast } from "react-toastify";
-import { useRouter } from "next/router";
 import EditorHeader from "@/components/EditorHeader";
 import EditorSidebar from "@/components/EditorSidebar";
 import TableNode from "@/components/TableNode";
@@ -105,7 +106,10 @@ function buildEdges(tables: Table[]): Edge[] {
 export default function Editor() {
   const router = useRouter();
   const token = router.query.token as string | undefined;
+
   const queryClient = useQueryClient();
+
+  io(`${process.env.NEXT_PUBLIC_SERVER_URL}`)
 
   const { data: schema, isLoading } = useQuery<Schema | null>({
     queryKey: ["schema", token],

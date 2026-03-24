@@ -1,11 +1,12 @@
 import "dotenv/config";
 import express, { Request, Response } from "express";
+import { createServer } from "node:http";
+import { Server } from "socket.io";
 import cors from "cors";
 import { rateLimiter } from "./middleware/rateLimiter";
 import schemaRouter from "./schema";
 
 const app = express();
-
 const allowedOrigins = process.env.CORS_ORIGIN?.split(",") ?? [];
 
 if (allowedOrigins.length > 0) {
@@ -19,7 +20,14 @@ if (allowedOrigins.length > 0) {
   );
 }
 
-app.use(express.json({ limit: "1mb" }));
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+  }
+});
+
+app.use(express.json());
 app.use(rateLimiter);
 
 app.use("/schemas", schemaRouter);
@@ -28,6 +36,12 @@ app.get("/", (_req: Request, res: Response) => {
   res.json({ Server: "200" });
 });
 
-app.listen(process.env.PORT, () => {
+io.on("connection", (socket) => {
+  socket.on('test', (data) => {
+    console.log("Test", data);
+  });
+});
+
+server.listen(process.env.PORT, () => {
   console.log(`Server running on http://localhost:${process.env.PORT}`);
 });
