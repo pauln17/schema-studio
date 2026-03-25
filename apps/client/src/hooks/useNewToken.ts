@@ -4,7 +4,6 @@ import router from "next/router";
 export const useNewToken = (token: string | undefined) => {
     const queryClient = useQueryClient();
 
-    if (!token) return { newToken: () => { }, isGenerating: false };
     const { mutate: newToken, isPending: isGenerating } = useMutation({
         mutationFn: async () => {
             if (!token) throw new Error("No token");
