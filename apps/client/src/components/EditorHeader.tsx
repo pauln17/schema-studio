@@ -1,53 +1,30 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/router";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 
 import ShareModal from "@/components/ShareModal";
+import { useCreateSchema } from "@/hooks/useCreateSchema";
+import { useNewToken } from "@/hooks/useNewToken";
+import { useUpdateSchema } from "@/hooks/useUpdateSchema";
 import { Schema } from "@/types/schema";
 
 interface EditorHeaderProps {
-  schema: Schema | null;
-  token: string;
-  saveSchema: () => void;
-  isPending: boolean;
+  schema: Schema;
+  token: string | undefined;
   renameSchema: (name: string) => void;
 }
 
 export default function EditorHeader({
   schema,
   token,
-  saveSchema,
-  isPending,
   renameSchema,
 }: EditorHeaderProps) {
-  const queryClient = useQueryClient();
-  const router = useRouter();
-
+  const { updateSchema, isUpdating } = useUpdateSchema(token);
+  const { createSchema, isCreating } = useCreateSchema(token);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/editor/${token}` : "";
 
-  const generateLinkMutation = useMutation({
-    mutationFn: async () => {
-      if (!token) throw new Error("No token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/schemas/token`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!res.ok) {
-        throw new Error("Failed to generate new token");
-      }
-      const data = await res.json();
-      return data.token as string;
-    },
-    onSuccess: (newToken) => {
-      queryClient.removeQueries({ queryKey: ["schema", token] });
-      router.push(`/editor/${newToken}`);
-    },
-  });
+  const { newToken, isGenerating } = useNewToken(token);
 
   const handleCopy = async () => {
     try {
@@ -57,12 +34,6 @@ export default function EditorHeader({
     } catch (error) {
       console.error(error);
     }
-  };
-
-  const handleGenerateLink = () => {
-    if (!token) return;
-    localStorage.setItem("OPEN_SHARE_AFTER_SAVE", "true");
-    generateLinkMutation.mutate();
   };
 
   useEffect(() => {
@@ -106,16 +77,13 @@ export default function EditorHeader({
           className="flex items-center justify-center gap-1 sm:gap-1.5 p-2 sm:px-3 sm:py-2 rounded-lg text-sm font-medium sm:min-w-[5rem] text-white bg-blue-600 hover:bg-blue-500 cursor-pointer transition-colors disabled:opacity-80"
           title={token ? "Save Changes" : "Save and Get Shareable Link"}
           onClick={
-            token
-              ? () => saveSchema()
-              : () => {
-                saveSchema();
-                localStorage.setItem("OPEN_SHARE_AFTER_SAVE", "true");
-              }
-          }
-          disabled={isPending}
+            token ? () => updateSchema() : () => {
+              createSchema();
+              localStorage.setItem("OPEN_SHARE_AFTER_SAVE", "true");
+            }}
+          disabled={isUpdating || isCreating}
         >
-          {isPending ? (
+          {isUpdating || isCreating ? (
             <span className="w-3.5 h-3.5 shrink-0 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (
             <>
@@ -130,7 +98,10 @@ export default function EditorHeader({
           className="flex items-center gap-1 sm:gap-1.5 p-2 sm:px-3 sm:py-2 rounded-lg text-sm text-neutral-300 border border-white/[0.1] hover:text-white hover:bg-white/[0.06] hover:border-white/[0.2] cursor-pointer transition-colors"
           title="Share"
           onClick={
-            token ? () => setIsShareOpen(true) : () => { saveSchema(); localStorage.setItem("OPEN_SHARE_AFTER_SAVE", "true"); }
+            token ? () => setIsShareOpen(true) : () => {
+              createSchema();
+              localStorage.setItem("OPEN_SHARE_AFTER_SAVE", "true");
+            }
           }
         >
           <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -171,12 +142,10 @@ export default function EditorHeader({
             <button
               type="button"
               className="w-full h-9 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer transition-colors"
-              disabled={!schema || generateLinkMutation.isPending}
-              onClick={handleGenerateLink}
+              disabled={isGenerating}
+              onClick={() => newToken()}
             >
-              {generateLinkMutation.isPending
-                ? "Generating…"
-                : "Generate New Link"}
+              {isGenerating ? "Generating…" : "Generate New Link"}
             </button>
             <p className="text-[11px] text-neutral-500">
               Generating a new link will invalidate the previous one.

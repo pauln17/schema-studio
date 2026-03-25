@@ -1,6 +1,6 @@
 import "@xyflow/react/dist/style.css";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   applyEdgeChanges,
   applyNodeChanges,
@@ -14,12 +14,13 @@ import {
 } from "@xyflow/react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import { io } from "socket.io-client";
 
 import EditorHeader from "@/components/EditorHeader";
 import EditorSidebar from "@/components/EditorSidebar";
 import TableNode from "@/components/TableNode";
+import { useQuerySchema } from "@/hooks/useQuerySchema";
 import type { Enum, Schema, Table } from "@/types/schema";
 
 function getLocalFkColumns(table: Table): string[] {
@@ -108,87 +109,12 @@ function buildEdges(tables: Table[]): Edge[] {
 export default function Editor() {
   const router = useRouter();
   const token = router.query.token as string | undefined;
-
   const queryClient = useQueryClient();
 
   io(`${process.env.NEXT_PUBLIC_SERVER_URL}`)
 
-  const { data: schema, isLoading } = useQuery<Schema | null>({
-    queryKey: ["schema", token],
-    queryFn: async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/schemas`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (res.status >= 400) {
-          router.push("/editor");
-          return;
-        }
-        const data = await res.json();
-        return data;
-      } catch (e) {
-        const msg = e instanceof Error ? e.message.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : "Unknown Error";
-        toast.error(`Server Error: ${msg}`, {
-          position: "bottom-center",
-          autoClose: 3000,
-          pauseOnHover: false,
-          closeOnClick: true,
-          theme: "dark",
-          onClose: () => router.push("/editor"),
-        });
-      }
-    },
-    enabled: !!token && router.isReady
-  });
-
-  const { mutate: saveSchema, isPending } = useMutation({
-    mutationFn: async () => {
-      const raw = queryClient.getQueryData<Schema>(["schema", token]);
-      const cacheData = {
-        name: raw?.name ?? "Untitled",
-        definition: raw?.definition ?? { enums: [], tables: [] },
-      };
-      if (token === undefined) {
-        const res = await fetch("http://localhost:5001/schemas", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(cacheData),
-        });
-        if (!res.ok) throw new Error("Failed to Create Schema");
-        return res.json();
-      } else {
-        const res = await fetch("http://localhost:5001/schemas", {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(cacheData),
-        });
-        if (!res.ok) throw new Error("Failed to Save Schema");
-        return res.json();
-      }
-    },
-    onSuccess: (data) => {
-      if (data.token) {
-        queryClient.setQueryData(["schema", undefined], {
-          name: "Untitled",
-          definition: { tables: [], enums: [] },
-        });
-        router.push(`/editor/${data.token}`);
-      }
-      // PUT Returns Schema Directly; POST Returns { Schema, Token }
-      const saved = data.schema ?? data;
-      if (token) {
-        queryClient.setQueryData(["schema", token], saved);
-      }
-    },
-  });
+  const { data, isFetching } = useQuerySchema(token);
+  const schema = data ?? { name: "", definition: { tables: [], enums: [] } };
 
   const updateQueryCache = useCallback(
     (data: Schema) => {
@@ -237,7 +163,7 @@ export default function Editor() {
     setFlowEdges(buildEdges(tables));
   }, [schema]);
 
-  const isTokenLoading = token && (!!router.isReady && (isLoading || schema === null));
+  const isTokenLoading = token && (!!router.isReady && (isFetching));
   return (
     <>
       <ToastContainer theme="dark" />
@@ -251,16 +177,14 @@ export default function Editor() {
       ) : (
         <div className="flex w-screen h-screen overflow-hidden flex-col">
           <EditorHeader
-            schema={schema ?? null}
-            token={token ?? ""}
-            saveSchema={() => saveSchema()}
-            isPending={isPending}
+            schema={schema}
+            token={token}
             renameSchema={(name) => schema && updateQueryCache({ ...schema, name })}
           />
           <div className="flex flex-1 min-h-0 min-w-0 flex-col sm:flex-row">
             <div className="w-full sm:w-72 md:w-80 shrink-0 flex flex-col overflow-hidden border-b sm:border-b-0 border-white/[0.06] max-h-[45%] sm:max-h-full">
               <EditorSidebar
-                schema={schema ?? { name: "Untitled", definition: { tables: [], enums: [] } }}
+                schema={schema}
                 tables={tables}
                 enums={enums}
                 updateQueryCache={updateQueryCache}
