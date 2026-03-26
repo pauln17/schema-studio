@@ -66,7 +66,9 @@ function ColumnRow({ tableName, col, referencedColumns, localFkColumns }: Column
 
 function TableNode({ data }: TableNodeProps) {
     const { table, referencedColumns, localFkColumns } = data;
-    const { name, columns, indexes } = table;
+    const name = table.name;
+    const columns = table.columns ?? [];
+    const indexes = table.indexes ?? [];
     const pkCols = columns.filter(c => c.primaryKey);
     const otherCols = columns.filter(c => !c.primaryKey);
 

@@ -53,12 +53,14 @@ export const buildEdges = (tables: Table[]): Edge[] => {
             const tgtPos = tablesByPos[tgtTable.name];
             const targetIsRight = tgtPos.x > srcPos.x;
 
-            for (let i = 0; i < ref.localColumns.length; i++) {
-                const localCol = ref.localColumns[i];
-                const foreignCol = ref.referencedColumns[i];
+            const localCols = ref.localColumns ?? [];
+            const foreignCols = ref.referencedColumns ?? [];
+            for (let i = 0; i < localCols.length; i++) {
+                const localCol = localCols[i];
+                const foreignCol = foreignCols[i];
                 if (!foreignCol) continue;
 
-                const targetHasColumn = tgtTable.columns.some((c) => c.name === foreignCol);
+                const targetHasColumn = (tgtTable.columns ?? []).some((c) => c.name === foreignCol);
                 if (!targetHasColumn) continue;
 
                 const sourceHandle = targetIsRight
