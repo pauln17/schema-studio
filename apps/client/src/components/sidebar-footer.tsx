@@ -102,11 +102,11 @@ export function SidebarFooter({ schema, token }: { schema: Schema; token: string
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = `${schema.name.toLowerCase().trim().split(/\s+/).join("-")}-postgres.sql`;
+              a.download = `${(schema.name ?? "untitled").toLowerCase().trim().split(/\s+/).join("-")}-postgres.sql`;
               a.click();
               URL.revokeObjectURL(url);
             } catch (err) {
-              toast.error("Failed to export schema", {
+              toast.error("Export Schema Failed", {
                 position: "bottom-center",
                 autoClose: 3000,
                 pauseOnHover: false,
