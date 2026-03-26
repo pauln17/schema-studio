@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 
 import { Schema } from "@/types/schema";
 
@@ -30,6 +31,16 @@ export const useCreateSchema = (token: string | undefined) => {
                 definition: { tables: [], enums: [] },
             });
             router.push(`/editor/${data.token}`);
+        },
+        onError: (error) => {
+            toast.error(`Create Schema Failed: ${error instanceof Error ? error.message : "Unknown Error"}`, {
+                position: "bottom-center",
+                autoClose: 3000,
+                pauseOnHover: false,
+                closeOnClick: true,
+                theme: "dark",
+                onClose: () => router.push("/editor"),
+            });
         },
     });
 

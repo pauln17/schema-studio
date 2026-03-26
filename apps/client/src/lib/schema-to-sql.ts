@@ -3,8 +3,6 @@ import { Schema } from "@/types/schema";
 export const normalizeIdentifier = (s: string): string =>
     s.toLowerCase().replace(/\s/g, "").replace(/[^a-z0-9_-]/g, "");
 
-const SQL_KEYWORDS = new Set(["current_timestamp", "current_date", "current_time", "localtimestamp", "localtime"]);
-
 const stripOuterParens = (s: string): string => {
     let v = s.trim();
     while (v.startsWith("(") && v.endsWith(")")) {
@@ -29,7 +27,6 @@ const formatDefault = (raw: string | number | boolean | undefined): string | nul
     if (!v || /^null$/i.test(v)) return null;
     if (/^-?\d+(\.\d+)?$/.test(v)) return `DEFAULT ${v}`;
     if (/^(true|false)$/i.test(v)) return `DEFAULT ${v.toLowerCase()}`;
-    if (SQL_KEYWORDS.has(v.toLowerCase())) return `DEFAULT ${v}`;
     if (/^[a-z_][a-z0-9_]*\([\s\S]*\)$/i.test(v)) return `DEFAULT ${v}`;
     if (/^'(?:[^']|'')*'$/.test(v)) return `DEFAULT ${v}`;
     if (v.includes("::")) return `DEFAULT ${v}`;
