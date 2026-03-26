@@ -38,7 +38,8 @@ export function SidebarFooter({ schema, token }: { schema: Schema; token: string
           accept=".sql"
           hidden
           onChange={(e) => {
-            const file = e.target.files?.[0];
+            const input = e.target;
+            const file = input.files?.[0];
             if (!file) return;
             if (!file.name.toLowerCase().endsWith(".sql")) {
               toast.warn("Invalid File Type", {
@@ -48,7 +49,7 @@ export function SidebarFooter({ schema, token }: { schema: Schema; token: string
                 closeOnClick: true,
                 theme: "dark",
               });
-              e.target.value = "";
+              input.value = "";
               return;
             }
             const MAX_SIZE_BYTES = 5 * 1024 * 1024;
@@ -60,7 +61,7 @@ export function SidebarFooter({ schema, token }: { schema: Schema; token: string
                 closeOnClick: true,
                 theme: "dark",
               });
-              e.target.value = "";
+              input.value = "";
               return;
             }
             const reader = new FileReader();
@@ -68,7 +69,9 @@ export function SidebarFooter({ schema, token }: { schema: Schema; token: string
               const text = ev.target?.result as string;
               try {
                 queryClient.setQueryData(["schema", token], sqlToSchema(text));
+                input.value = "";
               } catch (err) {
+                input.value = "";
                 toast.error("Invalid SQL", {
                   position: "bottom-center",
                   autoClose: 3000,
