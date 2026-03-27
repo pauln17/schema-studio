@@ -180,7 +180,9 @@ export function ColumnRow({
                 type="text"
                 maxLength={20}
                 placeholder="value"
-                defaultValue={col.default || ""}
+                defaultValue={
+                  col.default == null ? "" : String(col.default)
+                }
                 className="w-20 max-w-[100px] h-5 px-1.5 text-[10px] font-mono leading-none bg-white/[0.06] border border-white/[0.08] rounded text-neutral-300 placeholder-neutral-600 outline-none focus:border-emerald-500/50 box-border"
                 onBlur={(e) => {
                   const v = e.target.value.trim();
