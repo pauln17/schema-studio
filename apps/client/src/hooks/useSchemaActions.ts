@@ -261,7 +261,7 @@ export const useSchemaActions = (schema: Schema, token: string | undefined, sock
       const idx = (table.indexes ?? []).find((i) => i.name === idxName);
       if (!idx) return undefined;
       const cols = [...(idx.indexedColumns ?? []), colName];
-      const newName = cols.length > 0 ? `${tableName}_${cols.join("_")}_idx` : `${tableName}_untitled_idx`;
+      const newName = `${tableName}_${cols.join("_")}_idx`;
       setDefinition(
         tables.map((t) =>
           t.name === tableName

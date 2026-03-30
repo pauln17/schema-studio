@@ -10,7 +10,7 @@ export function SidebarFooter({ schema, token }: { schema: Schema; token: string
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { tables, enums } = schema.definition;
-  const columnCount = tables.reduce((n, t) => n + (t.columns?.length ?? 0), 0);
+  const columnCount = tables.reduce((n, t) => n + t.columns.length, 0);
 
   return (
     <div className="shrink-0 px-4 py-3 border-t border-white/[0.06] space-y-2">
@@ -82,7 +82,7 @@ export function SidebarFooter({ schema, token }: { schema: Schema; token: string
               const a = document.createElement("a");
               a.href = url;
               const name =
-                (schema.name ?? "")
+                schema.name
                   .trim()
                   .replace(/^['"]+|['"]+$/g, "")
                   .toLowerCase()

@@ -62,7 +62,7 @@ const toPostgresSql = (schema: Schema): string => {
 
         const columns = table.columns.map((c) => {
             const parts: string[] = [c.name];
-            if (c.type) parts.push(c.type);
+            parts.push(c.type);
             if (c.primaryKey && table.keys?.length === 1) parts.push("PRIMARY KEY");
             if (c.unique) parts.push("UNIQUE");
             if (c.notNull) parts.push("NOT NULL");

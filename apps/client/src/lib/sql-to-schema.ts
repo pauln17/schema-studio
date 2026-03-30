@@ -83,7 +83,6 @@ const sqlToSchema = (sql: string): Schema => {
         if (astCol.kind !== 'column') return;
         const constraints = astCol.constraints
 
-        const primaryKey = (primaryKeysByColumn.includes(astCol.name.name) || constraints?.some((c) => c.type === 'primary key')) ? true : false;
         const defaultConstraint = constraints?.find((c) => c.type === 'default');
         const defaultStr = defaultConstraint ? toSql.expr(defaultConstraint.default) : undefined;
 
@@ -99,15 +98,16 @@ const sqlToSchema = (sql: string): Schema => {
           }
         }
 
+        const inlineConstraints = constraints ?? [];
         const column: Column = {
           name: astCol.name.name,
           type: getDataTypeName(astCol.dataType),
-          primaryKey: primaryKey,
-          ...(constraints && {
-            unique: constraints.some((c) => c.type === 'unique') ? true : false,
-            notNull: constraints.some((c) => c.type === 'not null') ? true : false,
-            ...(defaultStr && { default: defaultStr }),
-          })
+          primaryKey:
+            primaryKeysByColumn.includes(astCol.name.name) ||
+            inlineConstraints.some((c) => c.type === 'primary key'),
+          unique: inlineConstraints.some((c) => c.type === 'unique'),
+          notNull: inlineConstraints.some((c) => c.type === 'not null'),
+          ...(defaultStr && { default: defaultStr }),
         };
 
         columns.push(column);

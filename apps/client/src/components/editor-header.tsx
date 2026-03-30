@@ -41,7 +41,7 @@ export default function EditorHeader({ schema, token, socket }: { schema: Schema
       <div className="min-w-0 flex-1 flex items-center">
         <input
           type="text"
-          value={schema?.name ?? ""}
+          value={schema.name}
           onChange={(e) => renameSchema(e.target.value)}
           placeholder={'Title'}
           maxLength={15}

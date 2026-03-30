@@ -153,7 +153,7 @@ export function ColumnRow({
             onClick={() =>
               updateColumn(tableName, col.name, { notNull: !col.notNull })
             }
-            className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${!!col.notNull ? CONSTRAINT_STYLES.NN.on : CONSTRAINT_STYLES.NN.off}`}
+            className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${col.notNull ? CONSTRAINT_STYLES.NN.on : CONSTRAINT_STYLES.NN.off}`}
           >
             NN
           </button>
@@ -161,7 +161,7 @@ export function ColumnRow({
             onClick={() =>
               updateColumn(tableName, col.name, { unique: !col.unique })
             }
-            className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${!!col.unique ? CONSTRAINT_STYLES.UQ.on : CONSTRAINT_STYLES.UQ.off}`}
+            className={`cursor-pointer px-2 py-0.5 rounded text-center text-[10px] font-semibold transition-colors whitespace-nowrap ${col.unique ? CONSTRAINT_STYLES.UQ.on : CONSTRAINT_STYLES.UQ.off}`}
           >
             UQ
           </button>
