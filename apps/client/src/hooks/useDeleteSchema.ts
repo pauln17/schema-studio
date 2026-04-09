@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 
 export const useDeleteSchema = (token: string | undefined) => {
   const router = useRouter();
